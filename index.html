@@ -759,6 +759,35 @@
   .send-btn:hover { background: var(--accent); transform: scale(1.05); }
   .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
+  .mic-btn {
+    width: 48px;
+    height: 48px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text-dim);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .mic-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .mic-btn.listening {
+    background: rgba(248,113,113,0.15);
+    border-color: var(--urgent);
+    color: var(--urgent);
+    animation: mic-pulse 1.4s infinite;
+  }
+  .mic-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  @keyframes mic-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(248,113,113,0.35); }
+    50% { box-shadow: 0 0 0 8px rgba(248,113,113,0); }
+  }
+
   .quick-chips {
     display: flex;
     gap: 8px;
@@ -1037,6 +1066,7 @@
           </div>
           <div class="chat-input-row">
             <textarea class="chat-input" id="chatInput" placeholder="Напиши задачу або запитай щось..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+            <button class="mic-btn" id="micBtn" onclick="toggleVoiceInput()" title="Голосове введення">🎤</button>
             <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
           </div>
         </div>
@@ -1694,6 +1724,79 @@ function autoResize(el) {
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
 
+// ─── VOICE INPUT (Web Speech API — built into the browser, no key needed) ──
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+let speechRecognizer = null;
+let isListening = false;
+
+function initVoiceInput() {
+  const micBtn = document.getElementById('micBtn');
+  if (!SpeechRecognitionAPI) {
+    micBtn.disabled = true;
+    micBtn.title = 'Голосове введення не підтримується цим браузером (працює в Chrome/Edge)';
+    return;
+  }
+  speechRecognizer = new SpeechRecognitionAPI();
+  speechRecognizer.lang = 'uk-UA';
+  speechRecognizer.continuous = true;
+  speechRecognizer.interimResults = true;
+
+  let finalTranscript = '';
+
+  speechRecognizer.onstart = () => {
+    finalTranscript = document.getElementById('chatInput').value;
+    if (finalTranscript) finalTranscript += ' ';
+    isListening = true;
+    micBtn.classList.add('listening');
+    micBtn.textContent = '⏹️';
+  };
+
+  speechRecognizer.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const transcript = e.results[i][0].transcript;
+      if (e.results[i].isFinal) finalTranscript += transcript + ' ';
+      else interim += transcript;
+    }
+    const input = document.getElementById('chatInput');
+    input.value = finalTranscript + interim;
+    autoResize(input);
+  };
+
+  speechRecognizer.onerror = (e) => {
+    stopVoiceInputUI();
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      addMessage('ai', 'Немає доступу до мікрофона. Дозволь доступ у налаштуваннях браузера й спробуй ще раз.');
+    } else if (e.error !== 'no-speech' && e.error !== 'aborted') {
+      addMessage('ai', 'Помилка голосового введення: ' + e.error);
+    }
+  };
+
+  speechRecognizer.onend = () => {
+    stopVoiceInputUI();
+  };
+}
+
+function stopVoiceInputUI() {
+  isListening = false;
+  const micBtn = document.getElementById('micBtn');
+  micBtn.classList.remove('listening');
+  micBtn.textContent = '🎤';
+}
+
+function toggleVoiceInput() {
+  if (!speechRecognizer) return;
+  if (isListening) {
+    speechRecognizer.stop();
+  } else {
+    try {
+      speechRecognizer.start();
+    } catch (e) {
+      // start() throws if called while already running — ignore.
+    }
+  }
+}
+
 function addMessage(role, content) {
   const wrap = document.getElementById('chatMessages');
   const div = document.createElement('div');
@@ -1722,6 +1825,8 @@ function hideTyping() {
 }
 
 async function sendMessage() {
+  if (isListening && speechRecognizer) speechRecognizer.stop();
+
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
   if (!text) return;
@@ -1880,8 +1985,9 @@ ${meetingsContext}
 }
 
 // ─── START ─────────────────────────────────────────────
-// Nothing to do here — the Firebase module block below calls onAuthReady()
-// once it knows whether we're signed in, and that shows the gate or starts the app.
+// The Firebase module block below calls onAuthReady() once it knows whether
+// we're signed in, and that shows the gate or starts the app.
+initVoiceInput();
 </script>
 
 <script type="module">
