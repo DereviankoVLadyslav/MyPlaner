@@ -22,8 +22,8 @@
     --warning: #fbbf24;
     --success: #34d399;
     --info: #60a5fa;
-    --goal-strategic: #fbbf24;
-    --goal-operational: #34d399;
+    --cat-strategic: #fbbf24;
+    --cat-operational: #34d399;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -648,75 +648,18 @@
     padding: 20px 10px;
   }
 
-  /* GOALS */
-  .goals-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-  }
-  @media (max-width: 900px) { .goals-grid { grid-template-columns: 1fr; } }
+  /* TASK CATEGORY (strategic vs operational) */
+  .task-item.cat-strategic { border-left: 3px solid var(--cat-strategic); }
+  .task-item.cat-operational { border-left: 3px solid var(--cat-operational); }
 
-  .goals-col-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 14px;
-  }
-
-  .goals-col-title {
-    font-size: 14px;
-    font-weight: 600;
-  }
-  .goals-col-title.strategic { color: var(--goal-strategic); }
-  .goals-col-title.operational { color: var(--goal-operational); }
-
-  .goals-add-btn {
-    font-size: 12px;
-    padding: 6px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 500;
-    border: 1px solid var(--border);
-    transition: all 0.2s;
-  }
-  .goals-add-btn.strategic { color: var(--goal-strategic); border-color: rgba(251,191,36,0.35); }
-  .goals-add-btn.strategic:hover { background: rgba(251,191,36,0.12); }
-  .goals-add-btn.operational { color: var(--goal-operational); border-color: rgba(52,211,153,0.35); }
-  .goals-add-btn.operational:hover { background: rgba(52,211,153,0.12); }
-
-  .goals-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .goal-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 4px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  .goal-card:hover { border-color: var(--accent); background: rgba(167,139,250,0.05); }
-  .goal-card.strategic { border-left-color: var(--goal-strategic); }
-  .goal-card.operational { border-left-color: var(--goal-operational); }
-  .goal-card.goal-done { opacity: 0.5; }
-
-  .goal-card-name { font-size: 14px; font-weight: 600; color: var(--text); line-height: 1.4; }
-  .goal-card.goal-done .goal-card-name { text-decoration: line-through; }
-  .goal-card-desc { font-size: 12px; color: var(--text-dim); margin-top: 6px; line-height: 1.5; white-space: pre-wrap; }
-  .goal-card-meta { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
-  .goal-card-date { font-size: 10.5px; color: var(--text-muted); }
-  .goal-card-done-badge { font-size: 10px; color: var(--success); font-weight: 600; }
-
-  .goals-empty { font-size: 12.5px; color: var(--text-muted); padding: 12px 4px; }
+  .cat-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:2px; vertical-align:middle; }
+  .cat-dot.cat-strategic { background: var(--cat-strategic); }
+  .cat-dot.cat-operational { background: var(--cat-operational); }
 
   .tag-choice { opacity: 0.4; }
   .tag-choice.tag-active { opacity: 1; box-shadow: 0 0 0 1.5px currentColor inset; }
-  .goal-tag-strategic { background: rgba(251,191,36,0.15); color: var(--goal-strategic); border: 1px solid rgba(251,191,36,0.3); }
-  .goal-tag-operational { background: rgba(52,211,153,0.15); color: var(--goal-operational); border: 1px solid rgba(52,211,153,0.3); }
+  .cat-tag-strategic { background: rgba(251,191,36,0.15); color: var(--cat-strategic); border: 1px solid rgba(251,191,36,0.3); }
+  .cat-tag-operational { background: rgba(52,211,153,0.15); color: var(--cat-operational); border: 1px solid rgba(52,211,153,0.3); }
 
   /* CHAT */
   .chat-wrap {
@@ -1075,6 +1018,11 @@
       <span class="tag p2 tag-clickable tag-choice" id="taskPriorityChoice2" onclick="setTaskModalPriority(2)">⚡ Важливо</span>
       <span class="tag p3 tag-clickable tag-choice" id="taskPriorityChoice3" onclick="setTaskModalPriority(3)">📌 Планово</span>
     </div>
+    <label class="field-label" style="margin-top:14px;">Тип задачі</label>
+    <div style="display:flex; gap:8px;">
+      <span class="tag tag-clickable tag-choice cat-tag-strategic" id="taskCategoryChoiceStrategic" onclick="setTaskModalCategory('strategic')">🎯 Стратегічна</span>
+      <span class="tag tag-clickable tag-choice cat-tag-operational" id="taskCategoryChoiceOperational" onclick="setTaskModalCategory('operational')">⚙️ Оперативна</span>
+    </div>
     <label class="field-label" style="margin-top:14px;" for="taskDescInput">Опис</label>
     <textarea id="taskDescInput" class="modal-textarea" placeholder="Деталі, нотатки..."></textarea>
     <label class="cal-toggle" style="margin-top:14px;">
@@ -1083,33 +1031,6 @@
     </label>
     <button class="primary-btn" onclick="saveTaskModal()">Зберегти</button>
     <button class="secondary-btn" id="taskModalDeleteBtn" onclick="deleteTaskModal()" style="border-color: rgba(248,113,113,0.4); color: var(--urgent);">Видалити задачу</button>
-  </div>
-</div>
-
-<!-- GOAL MODAL -->
-<div class="overlay hidden" id="goalModalOverlay">
-  <div class="modal-card">
-    <div class="modal-header">
-      <div class="modal-title" id="goalModalTitle">🎯 Ціль</div>
-      <div class="modal-close" onclick="closeGoalModal()">✕</div>
-    </div>
-    <label class="field-label">Тип цілі</label>
-    <div style="display:flex; gap:8px;">
-      <span class="tag tag-clickable tag-choice goal-tag-strategic" id="goalCategoryChoiceStrategic" onclick="setGoalModalCategory('strategic')">🎯 Стратегічна</span>
-      <span class="tag tag-clickable tag-choice goal-tag-operational" id="goalCategoryChoiceOperational" onclick="setGoalModalCategory('operational')">⚙️ Оперативна</span>
-    </div>
-    <label class="field-label" style="margin-top:14px;" for="goalNameInput">Назва</label>
-    <input type="text" id="goalNameInput" placeholder="Назва цілі">
-    <label class="field-label" style="margin-top:14px;" for="goalDateInput">Дедлайн (необов'язково)</label>
-    <input type="text" id="goalDateInput" placeholder="РРРР-ММ-ДД">
-    <label class="field-label" style="margin-top:14px;" for="goalDescInput">Опис</label>
-    <textarea id="goalDescInput" class="modal-textarea" placeholder="Деталі, кроки, метрики..."></textarea>
-    <label class="cal-toggle" style="margin-top:14px;">
-      <input type="checkbox" id="goalDoneInput">
-      Досягнуто
-    </label>
-    <button class="primary-btn" onclick="saveGoalModal()">Зберегти</button>
-    <button class="secondary-btn" id="goalDeleteBtn" onclick="deleteGoalModal()" style="border-color: rgba(248,113,113,0.4); color: var(--urgent);">Видалити ціль</button>
   </div>
 </div>
 
@@ -1176,7 +1097,6 @@
     <div class="tabs">
       <div class="tab active" onclick="switchTab('chat')" id="tab-chat">💬 Чат з AI</div>
       <div class="tab" onclick="switchTab('calendar')" id="tab-calendar">📅 Календар</div>
-      <div class="tab" onclick="switchTab('goals')" id="tab-goals">🎯 Цілі</div>
     </div>
 
     <!-- CHAT TAB -->
@@ -1240,25 +1160,6 @@
       </div>
     </div>
 
-    <!-- GOALS TAB -->
-    <div id="view-goals" class="hidden content">
-      <div class="goals-grid">
-        <div class="goals-col">
-          <div class="goals-col-header">
-            <div class="goals-col-title strategic">🎯 Стратегічні цілі</div>
-            <div class="goals-add-btn strategic" onclick="openGoalModal(null, 'strategic')">+ Додати</div>
-          </div>
-          <div class="goals-list" id="goalsStrategicList"></div>
-        </div>
-        <div class="goals-col">
-          <div class="goals-col-header">
-            <div class="goals-col-title operational">⚙️ Оперативні цілі</div>
-            <div class="goals-add-btn operational" onclick="openGoalModal(null, 'operational')">+ Додати</div>
-          </div>
-          <div class="goals-list" id="goalsOperationalList"></div>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
@@ -1430,9 +1331,6 @@ let appStarted = false;
 
 function tasksOnly() { return items.filter(i => i.type === 'task' || !i.type); }
 function meetingsOnly() { return items.filter(i => i.type === 'meeting'); }
-function goalsOnly(category) {
-  return items.filter(i => i.type === 'goal' && (!category || i.category === category));
-}
 
 // ─── INIT ─────────────────────────────────────────────
 function startApp(user) {
@@ -1492,6 +1390,7 @@ function legacyToItem(t) {
     from: t.from || '',
     withWhom: '',
     priority: t.priority || 3,
+    category: t.category === 'strategic' ? 'strategic' : 'operational',
     done: !!t.done,
     description: t.description || '',
     created: t.created || null
@@ -1509,9 +1408,7 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).classList.add('active');
   document.getElementById('view-chat').style.display = tab === 'chat' ? 'flex' : 'none';
   document.getElementById('view-calendar').classList.toggle('hidden', tab !== 'calendar');
-  document.getElementById('view-goals').classList.toggle('hidden', tab !== 'goals');
   if (tab === 'calendar') renderCalendar();
-  if (tab === 'goals') renderGoals();
 }
 
 // ─── STATS ────────────────────────────────────────────
@@ -1544,17 +1441,20 @@ function renderTaskList() {
     const pClass = 'p' + (t.priority || 3);
     const pLabel = t.priority === 1 ? '🔥 Терміново' : t.priority === 2 ? '⚡ Важливо' : '📌 Планово';
     const pTag = `<span class="tag ${pClass} tag-clickable" title="Клікни щоб змінити пріоритет" onclick="event.stopPropagation(); cyclePriority('${t.id}')">${pLabel}</span>`;
+    const cat = t.category === 'strategic' ? 'strategic' : 'operational';
+    const catLabel = cat === 'strategic' ? '🎯 Стратегічна' : '⚙️ Оперативна';
+    const catTag = `<span class="tag cat-tag-${cat} tag-clickable" title="Клікни щоб змінити тип" onclick="event.stopPropagation(); cycleCategory('${t.id}')">${catLabel}</span>`;
     const dateTag = t.date ? `<span class="tag day-tag">📅 ${escapeHtml(formatShortDate(t.date))}</span>` : '';
     const fromTag = t.from ? `<span class="tag from-tag">👤 ${escapeHtml(t.from)}</span>` : '';
     const descMark = t.description ? `<span title="Є опис" style="opacity:0.6;">📝</span>` : '';
 
-    return `<div class="task-item ${t.done ? 'done-item' : ''}" data-id="${t.id}" onclick="openTaskModal('${t.id}')">
+    return `<div class="task-item cat-${cat} ${t.done ? 'done-item' : ''}" data-id="${t.id}" onclick="openTaskModal('${t.id}')">
       <div class="task-item-top">
         <div class="drag-handle" onpointerdown="taskDragStart(event, '${t.id}')" onclick="event.stopPropagation();" title="Перетягни щоб змінити порядок">⋮⋮</div>
         <div class="task-check ${t.done ? 'checked' : ''}" onclick="toggleTask(event,'${t.id}')"></div>
         <div class="task-name">${escapeHtml(t.name)} ${descMark}</div>
       </div>
-      <div class="task-meta">${pTag}${dateTag}${fromTag}</div>
+      <div class="task-meta">${pTag}${catTag}${dateTag}${fromTag}</div>
     </div>`;
   }).join('');
 }
@@ -1612,6 +1512,15 @@ function cyclePriority(id) {
   renderTaskList();
   renderCalendar();
   updateStats();
+}
+
+function cycleCategory(id) {
+  const it = items.find(i => i.id === id);
+  if (!it || it.type === 'meeting') return;
+  it.category = it.category === 'strategic' ? 'operational' : 'strategic';
+  saveItems();
+  renderTaskList();
+  renderCalendar();
 }
 
 function escapeHtml(str) {
@@ -1710,8 +1619,10 @@ function renderCalendar() {
         const linkMark = it.link ? ' 🔗' : '';
         return `<div class="cal-chip chip-meeting" title="${escapeHtml(title)}" onclick="event.stopPropagation(); openMeetingModal('${it.id}')">${timeStr}🤝 ${escapeHtml(it.name)}${linkMark}</div>`;
       }
-      const title = it.name + (it.from ? ' — від ' + it.from : '');
-      return `<div class="cal-chip chip-task p${it.priority||3} ${it.done?'done-chip':''}" title="${escapeHtml(title)}" onclick="event.stopPropagation(); toggleItemDone('${it.id}')">${timeStr}📌 ${escapeHtml(it.name)}</div>`;
+      const cat = it.category === 'strategic' ? 'strategic' : 'operational';
+      const catDot = `<span class="cat-dot cat-${cat}" title="${cat === 'strategic' ? 'Стратегічна' : 'Оперативна'}"></span>`;
+      const title = it.name + (it.from ? ' — від ' + it.from : '') + (cat === 'strategic' ? ' (стратегічна)' : ' (оперативна)');
+      return `<div class="cal-chip chip-task p${it.priority||3} ${it.done?'done-chip':''}" title="${escapeHtml(title)}" onclick="event.stopPropagation(); toggleItemDone('${it.id}')">${timeStr}${catDot}📌 ${escapeHtml(it.name)}</div>`;
     }).join('');
     const moreHtml = extra > 0 ? `<div class="cal-more">+${extra} ще</div>` : '';
 
@@ -1734,7 +1645,9 @@ function renderUnscheduled() {
   }
   el.innerHTML = list.map(t => {
     const pClass = 'p' + (t.priority || 3);
-    return `<div class="cal-chip chip-task ${pClass} ${t.done?'done-chip':''}" style="cursor:pointer;" onclick="openTaskModal('${t.id}')" title="${escapeHtml(t.name)}${t.from ? ' — від ' + t.from : ''} (клікни щоб редагувати)">📌 ${escapeHtml(t.name)}</div>`;
+    const cat = t.category === 'strategic' ? 'strategic' : 'operational';
+    const catDot = `<span class="cat-dot cat-${cat}" title="${cat === 'strategic' ? 'Стратегічна' : 'Оперативна'}"></span>`;
+    return `<div class="cal-chip chip-task ${pClass} ${t.done?'done-chip':''}" style="cursor:pointer;" onclick="openTaskModal('${t.id}')" title="${escapeHtml(t.name)}${t.from ? ' — від ' + t.from : ''} (клікни щоб редагувати)">${catDot}📌 ${escapeHtml(t.name)}</div>`;
   }).join('');
 }
 
@@ -1787,9 +1700,10 @@ function deleteMeetingModal() {
   closeMeetingModal();
 }
 
-// ─── TASK MODAL (edit name, date, priority, description) ─────────────
+// ─── TASK MODAL (edit name, date, priority, category, description) ────
 let currentTaskId = null;
 let taskModalPriority = 3;
+let taskModalCategory = 'operational';
 
 function openTaskModal(id) {
   const it = id ? items.find(i => i.id === id) : null;
@@ -1802,6 +1716,7 @@ function openTaskModal(id) {
   document.getElementById('taskDescInput').value = it ? (it.description || '') : '';
   document.getElementById('taskDoneInput').checked = it ? !!it.done : false;
   setTaskModalPriority(it ? (it.priority || 3) : 3);
+  setTaskModalCategory(it ? (it.category === 'strategic' ? 'strategic' : 'operational') : 'operational');
 
   const delBtn = document.getElementById('taskModalDeleteBtn');
   if (delBtn) delBtn.style.display = it ? '' : 'none';
@@ -1820,6 +1735,14 @@ function setTaskModalPriority(p) {
     const el = document.getElementById('taskPriorityChoice' + n);
     if (el) el.classList.toggle('tag-active', n === p);
   });
+}
+
+function setTaskModalCategory(cat) {
+  taskModalCategory = cat;
+  const strat = document.getElementById('taskCategoryChoiceStrategic');
+  const oper = document.getElementById('taskCategoryChoiceOperational');
+  if (strat) strat.classList.toggle('tag-active', cat === 'strategic');
+  if (oper) oper.classList.toggle('tag-active', cat === 'operational');
 }
 
 function saveTaskModal() {
@@ -1853,6 +1776,7 @@ function saveTaskModal() {
   it.from = from;
   it.description = description;
   it.priority = taskModalPriority;
+  it.category = taskModalCategory;
   it.done = done;
 
   saveItems();
@@ -1872,105 +1796,6 @@ function deleteTaskModal() {
   closeTaskModal();
 }
 
-// ─── GOALS (strategic vs operational, own tab) ────────────────────────
-let currentGoalId = null;
-let goalModalCategory = 'strategic';
-
-function renderGoals() {
-  renderGoalsColumn('strategic', 'goalsStrategicList');
-  renderGoalsColumn('operational', 'goalsOperationalList');
-}
-
-function renderGoalsColumn(category, elId) {
-  const el = document.getElementById(elId);
-  const list = goalsOnly(category).sort((a,b) => (a.created||'').localeCompare(b.created||''));
-  if (list.length === 0) {
-    el.innerHTML = `<div class="goals-empty">Поки немає цілей. Натисни «+ Додати».</div>`;
-    return;
-  }
-  el.innerHTML = list.map(g => {
-    const dateHtml = g.targetDate ? `<span class="goal-card-date">🎯 до ${escapeHtml(formatShortDate(g.targetDate))}</span>` : '';
-    const doneHtml = g.done ? `<span class="goal-card-done-badge">✓ Досягнуто</span>` : '';
-    const descHtml = g.description ? `<div class="goal-card-desc">${escapeHtml(g.description)}</div>` : '';
-    return `<div class="goal-card ${category} ${g.done ? 'goal-done' : ''}" onclick="openGoalModal('${g.id}')">
-      <div class="goal-card-name">${escapeHtml(g.name)}</div>
-      ${descHtml}
-      <div class="goal-card-meta">${dateHtml}${doneHtml}</div>
-    </div>`;
-  }).join('');
-}
-
-function openGoalModal(id, presetCategory) {
-  const it = id ? items.find(i => i.id === id) : null;
-  currentGoalId = id || null;
-
-  document.getElementById('goalModalTitle').textContent = it ? '🎯 Ціль' : '🎯 Нова ціль';
-  document.getElementById('goalNameInput').value = it ? (it.name || '') : '';
-  document.getElementById('goalDateInput').value = it ? (it.targetDate || '') : '';
-  document.getElementById('goalDescInput').value = it ? (it.description || '') : '';
-  document.getElementById('goalDoneInput').checked = it ? !!it.done : false;
-  setGoalModalCategory(it ? (it.category || 'strategic') : (presetCategory || 'strategic'));
-
-  const delBtn = document.getElementById('goalDeleteBtn');
-  if (delBtn) delBtn.style.display = it ? '' : 'none';
-
-  document.getElementById('goalModalOverlay').classList.remove('hidden');
-}
-
-function closeGoalModal() {
-  document.getElementById('goalModalOverlay').classList.add('hidden');
-  currentGoalId = null;
-}
-
-function setGoalModalCategory(cat) {
-  goalModalCategory = cat;
-  const strat = document.getElementById('goalCategoryChoiceStrategic');
-  const oper = document.getElementById('goalCategoryChoiceOperational');
-  if (strat) strat.classList.toggle('tag-active', cat === 'strategic');
-  if (oper) oper.classList.toggle('tag-active', cat === 'operational');
-}
-
-function saveGoalModal() {
-  const name = document.getElementById('goalNameInput').value.trim();
-  if (!name) {
-    alert('Введи назву цілі.');
-    return;
-  }
-  const targetDate = document.getElementById('goalDateInput').value.trim();
-  if (targetDate && !parseIso(targetDate)) {
-    alert("Перевір дедлайн (формат РРРР-ММ-ДД) або залиш поле порожнім.");
-    return;
-  }
-  const description = document.getElementById('goalDescInput').value.trim();
-  const done = document.getElementById('goalDoneInput').checked;
-
-  let it = currentGoalId ? items.find(i => i.id === currentGoalId) : null;
-  if (!it) {
-    it = {
-      id: Date.now() + '-' + Math.random().toString(36).slice(2),
-      type: 'goal',
-      created: new Date().toISOString()
-    };
-    items.push(it);
-  }
-  it.name = name;
-  it.category = goalModalCategory;
-  it.targetDate = targetDate;
-  it.description = description;
-  it.done = done;
-
-  saveItems();
-  renderGoals();
-  closeGoalModal();
-}
-
-function deleteGoalModal() {
-  if (!currentGoalId) { closeGoalModal(); return; }
-  items = items.filter(i => i.id !== currentGoalId);
-  saveItems();
-  renderGoals();
-  closeGoalModal();
-}
 
 // ─── ANTHROPIC API CALL ────────────────────────────────
 async function callClaude(system, messages) {
@@ -2199,15 +2024,11 @@ async function sendMessage() {
   const taskList = tasksOnly();
   const meetingList = meetingsOnly();
   const tasksContext = taskList.length > 0
-    ? `Поточні задачі в планері:\n${taskList.map(t => `- [${t.done ? 'ВИКОНАНО' : t.priority===1?'ТЕРМІНОВО':t.priority===2?'ВАЖЛИВО':'ПЛАНОВО'}] ${t.name}${t.from?' (від '+t.from+')':''}${t.date?' на '+t.date:' (без дати)'}`).join('\n')}`
+    ? `Поточні задачі в планері:\n${taskList.map(t => `- [${t.done ? 'ВИКОНАНО' : t.priority===1?'ТЕРМІНОВО':t.priority===2?'ВАЖЛИВО':'ПЛАНОВО'}, ${t.category === 'strategic' ? 'СТРАТЕГІЧНА' : 'ОПЕРАТИВНА'}] ${t.name}${t.from?' (від '+t.from+')':''}${t.date?' на '+t.date:' (без дати)'}`).join('\n')}`
     : 'Задач поки немає.';
   const meetingsContext = meetingList.length > 0
     ? `Поточні наради/зустрічі:\n${meetingList.map(m => `- ${m.name}${m.withWhom?' (з '+m.withWhom+')':''} — ${m.date}${m.time?' о '+m.time:''}`).join('\n')}`
     : 'Нарад поки немає.';
-  const goalList = goalsOnly();
-  const goalsContext = goalList.length > 0
-    ? `Поточні цілі:\n${goalList.map(g => `- [${g.category === 'strategic' ? 'СТРАТЕГІЧНА' : 'ОПЕРАТИВНА'}${g.done ? ', ДОСЯГНУТО' : ''}] ${g.name}${g.targetDate ? ' (дедлайн ' + g.targetDate + ')' : ''}`).join('\n')}`
-    : 'Цілей поки немає.';
 
   const system = `Ти розумний помічник-планер. Відповідай ТІЛЬКИ українською мовою.
 
@@ -2215,33 +2036,27 @@ ${tasksContext}
 
 ${meetingsContext}
 
-${goalsContext}
-
 Сьогоднішня дата: ${new Date().toLocaleDateString('uk-UA', {weekday:'long', year:'numeric', month:'long', day:'numeric'})} (у форматі ISO: ${isoDate(new Date())}).
 
 Твої можливості:
 1. Задачі та наради — це РІЗНІ речі. Задача — щось, що треба зробити (може не мати дати). Нарада/зустріч — подія з конкретним часом і, як правило, учасниками.
-2. Коли користувач додає ЗАДАЧУ — витягни: назву, від кого (якщо сказано), пріоритет (1=терміново, 2=важливо, 3=планово), і дату у форматі ISO "YYYY-MM-DD", розраховану з сьогоднішньої дати вище. Якщо дата не згадана і не випливає з контексту — залиш date порожнім (задача без дати, це нормально).
+2. Кожна задача має ще й тип: стратегічна (велика, довгострокова, напрям розвитку) або оперативна (щоденна, конкретна, короткострокова). Коли користувач додає ЗАДАЧУ — витягни: назву, від кого (якщо сказано), пріоритет (1=терміново, 2=важливо, 3=планово), тип "category" ("strategic" або "operational" — якщо з контексту не зрозуміло, став "operational" за замовчуванням), і дату у форматі ISO "YYYY-MM-DD", розраховану з сьогоднішньої дати вище. Якщо дата не згадана і не випливає з контексту — залиш date порожнім (задача без дати, це нормально).
 3. Коли користувач додає НАРАДУ/ЗУСТРІЧ — витягни: назву, з ким (якщо сказано), дату "YYYY-MM-DD" (обов'язково — якщо не сказано explicitно, постав сьогоднішню) і час "HH:MM" якщо згаданий.
 4. Відповідай корисно і по суті.
 5. Якщо додаєш задачі — ЗАВЖДИ спочатку напиши коротке людське підтвердження, і лише ПІСЛЯ нього постав JSON-блок:
 \`\`\`json
-{"action":"add_tasks","tasks":[{"name":"...","from":"...","priority":1,"date":"2026-08-21"}]}
+{"action":"add_tasks","tasks":[{"name":"...","from":"...","priority":1,"category":"operational","date":"2026-08-21"}]}
 \`\`\`
 6. Якщо додаєш наради — так само спочатку підтвердження, потім JSON:
 \`\`\`json
 {"action":"add_meetings","meetings":[{"name":"...","withWhom":"...","date":"2026-08-21","time":"15:00"}]}
 \`\`\`
-7. Ціль — стратегічна (велика, довгострокова, напрям розвитку) або оперативна (конкретна, короткострокова, крок до стратегічної цілі). Коли користувач додає ЦІЛЬ — визнач category ("strategic" або "operational"), назву, дедлайн "YYYY-MM-DD" (необов'язково) і опис (необов'язково). Спочатку підтвердження, потім JSON:
-\`\`\`json
-{"action":"add_goals","goals":[{"name":"...","category":"strategic","targetDate":"2026-12-31","description":"..."}]}
-\`\`\`
-8. Ніколи не повертай ТІЛЬКИ JSON без тексту перед ним.
-9. Якщо маркуєш задачу як виконану — так само спочатку напиши підтвердження, потім JSON:
+7. Ніколи не повертай ТІЛЬКИ JSON без тексту перед ним.
+8. Якщо маркуєш задачу як виконану — так само спочатку напиши підтвердження, потім JSON:
 \`\`\`json
 {"action":"done","name":"..."}
 \`\`\`
-10. Для звичайних питань — просто відповідай, без JSON.
+9. Для звичайних питань — просто відповідай, без JSON.
 
 Будь дружнім, коротким і корисним.`;
 
@@ -2267,6 +2082,7 @@ ${goalsContext}
               from: t.from || '',
               withWhom: '',
               priority: t.priority || 3,
+              category: t.category === 'strategic' ? 'strategic' : 'operational',
               done: false,
               description: '',
               order: Date.now(),
@@ -2299,23 +2115,6 @@ ${goalsContext}
           });
           saveItems();
           renderCalendar();
-        }
-        if (action.action === 'add_goals' && action.goals) {
-          action.goals.forEach(g => {
-            items.push({
-              id: Date.now() + '-' + Math.random().toString(36).slice(2),
-              type: 'goal',
-              name: g.name,
-              category: g.category === 'operational' ? 'operational' : 'strategic',
-              targetDate: g.targetDate || '',
-              description: g.description || '',
-              done: false,
-              created: new Date().toISOString()
-            });
-            addedNames.push(g.name);
-          });
-          saveItems();
-          renderGoals();
         }
         if (action.action === 'done') {
           const found = tasksOnly().find(t => t.name.toLowerCase().includes(action.name.toLowerCase()));
