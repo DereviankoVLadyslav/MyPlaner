@@ -1147,7 +1147,15 @@ async function callClaude(system, messages) {
     throw new Error('HTTP_' + res.status + ': ' + errBody.slice(0,200));
   }
   const data = await res.json();
-  return data.content?.[0]?.text || '';
+  // Claude's response can include multiple content blocks (e.g. a "thinking"
+  // block followed by the actual "text" block) — grab only the text blocks,
+  // not just content[0], or the reply can come back looking empty.
+  if (!Array.isArray(data.content)) return '';
+  return data.content
+    .filter(block => block && block.type === 'text' && typeof block.text === 'string')
+    .map(block => block.text)
+    .join('\n')
+    .trim();
 }
 
 // ─── CHECKIN ──────────────────────────────────────────
