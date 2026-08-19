@@ -93,6 +93,22 @@
   }
   input[type="password"]:focus, input[type="text"]:focus { border-color: var(--accent); }
 
+  .modal-textarea {
+    width: 100%;
+    min-height: 76px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    resize: vertical;
+    transition: border-color 0.2s;
+  }
+  .modal-textarea:focus { border-color: var(--accent); }
+
   .primary-btn {
     width: 100%;
     margin-top: 14px;
@@ -388,6 +404,25 @@
     border-radius: 20px;
     letter-spacing: 0.3px;
   }
+
+  .tag.tag-clickable { cursor: pointer; transition: all 0.15s; }
+  .tag.tag-clickable:hover { filter: brightness(1.25); transform: scale(1.04); }
+
+  .drag-handle {
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1;
+    padding: 2px 4px;
+    cursor: grab;
+    touch-action: none;
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 1px;
+  }
+  .drag-handle:hover { color: var(--text-dim); }
+
+  .task-item.dragging { opacity: 0.45; border-color: var(--accent); }
+  .task-item-top { position: relative; }
 
   .tag.p1 { background: rgba(248,113,113,0.15); color: var(--urgent); border: 1px solid rgba(248,113,113,0.3); }
   .tag.p2 { background: rgba(251,191,36,0.15); color: var(--warning); border: 1px solid rgba(251,191,36,0.3); }
@@ -884,6 +919,36 @@
   </div>
 </div>
 
+<!-- MEETING MODAL -->
+<div class="overlay hidden" id="meetingModalOverlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title">🤝 Нарада</div>
+      <div class="modal-close" onclick="closeMeetingModal()">✕</div>
+    </div>
+    <label class="field-label" for="meetingNameInput">Назва</label>
+    <input type="text" id="meetingNameInput" placeholder="Назва наради">
+    <div style="display:flex; gap:10px; margin-top:14px;">
+      <div style="flex:1;">
+        <label class="field-label" for="meetingDateInput">Дата</label>
+        <input type="text" id="meetingDateInput" placeholder="РРРР-ММ-ДД">
+      </div>
+      <div style="flex:1;">
+        <label class="field-label" for="meetingTimeInput">Час</label>
+        <input type="text" id="meetingTimeInput" placeholder="ГГ:ХХ">
+      </div>
+    </div>
+    <label class="field-label" style="margin-top:14px;" for="meetingWithInput">З ким</label>
+    <input type="text" id="meetingWithInput" placeholder="Учасники">
+    <label class="field-label" style="margin-top:14px;" for="meetingDescInput">Опис</label>
+    <textarea id="meetingDescInput" class="modal-textarea" placeholder="Порядок денний, нотатки..."></textarea>
+    <label class="field-label" style="margin-top:14px;" for="meetingLinkInput">Посилання на зустріч</label>
+    <input type="text" id="meetingLinkInput" placeholder="https://meet.google.com/...">
+    <button class="primary-btn" onclick="saveMeetingModal()">Зберегти</button>
+    <button class="secondary-btn" onclick="deleteMeetingModal()" style="border-color: rgba(248,113,113,0.4); color: var(--urgent);">Видалити нараду</button>
+  </div>
+</div>
+
 <div class="header">
   <div class="logo">Планер ✦ <span id="headerDate"></span></div>
   <div class="header-right">
@@ -1266,6 +1331,8 @@ function updateStats() {
 }
 
 // ─── TASK LIST (sidebar — tasks only, meetings live on the calendar) ──
+const NO_ORDER = Number.MAX_SAFE_INTEGER;
+
 function renderTaskList() {
   const el = document.getElementById('taskList');
   const list = tasksOnly();
@@ -1274,26 +1341,81 @@ function renderTaskList() {
     return;
   }
 
-  const sorted = [...list].sort((a,b) => {
-    if (a.done !== b.done) return a.done ? 1 : -1;
-    return (a.priority||3) - (b.priority||3);
-  });
+  // Manual drag order wins (stable sort keeps insertion order for anything
+  // that hasn't been dragged yet — no more automatic priority sorting).
+  const sorted = [...list].sort((a,b) => (a.order ?? NO_ORDER) - (b.order ?? NO_ORDER));
 
   el.innerHTML = sorted.map(t => {
-    const pTag = t.priority === 1 ? '<span class="tag p1">🔥 Терміново</span>' :
-                 t.priority === 2 ? '<span class="tag p2">⚡ Важливо</span>' :
-                                    '<span class="tag p3">📌 Планово</span>';
+    const pClass = 'p' + (t.priority || 3);
+    const pLabel = t.priority === 1 ? '🔥 Терміново' : t.priority === 2 ? '⚡ Важливо' : '📌 Планово';
+    const pTag = `<span class="tag ${pClass} tag-clickable" title="Клікни щоб змінити пріоритет" onclick="event.stopPropagation(); cyclePriority('${t.id}')">${pLabel}</span>`;
     const dateTag = t.date ? `<span class="tag day-tag">📅 ${escapeHtml(formatShortDate(t.date))}</span>` : '';
     const fromTag = t.from ? `<span class="tag from-tag">👤 ${escapeHtml(t.from)}</span>` : '';
 
-    return `<div class="task-item ${t.done ? 'done-item' : ''}" onclick="selectTask('${t.id}')">
+    return `<div class="task-item ${t.done ? 'done-item' : ''}" data-id="${t.id}" onclick="selectTask('${t.id}')">
       <div class="task-item-top">
+        <div class="drag-handle" onpointerdown="taskDragStart(event, '${t.id}')" title="Перетягни щоб змінити порядок">⋮⋮</div>
         <div class="task-check ${t.done ? 'checked' : ''}" onclick="toggleTask(event,'${t.id}')"></div>
         <div class="task-name">${escapeHtml(t.name)}</div>
       </div>
       <div class="task-meta">${pTag}${dateTag}${fromTag}</div>
     </div>`;
   }).join('');
+}
+
+// ─── DRAG TO REORDER (pointer events — works for mouse & touch) ───────
+let dragState = null;
+
+function taskDragStart(e, id) {
+  e.preventDefault();
+  const item = document.querySelector(`.task-item[data-id="${id}"]`);
+  if (!item) return;
+  dragState = { id, item };
+  item.classList.add('dragging');
+  document.addEventListener('pointermove', taskDragMove);
+  document.addEventListener('pointerup', taskDragEnd);
+  document.addEventListener('pointercancel', taskDragEnd);
+}
+
+function taskDragMove(e) {
+  if (!dragState) return;
+  const list = document.getElementById('taskList');
+  const dragging = dragState.item;
+  const y = e.clientY;
+  const siblings = [...list.querySelectorAll('.task-item:not(.dragging)')];
+  let nextSibling = null;
+  for (const sib of siblings) {
+    const rect = sib.getBoundingClientRect();
+    if (y < rect.top + rect.height / 2) { nextSibling = sib; break; }
+  }
+  if (nextSibling) list.insertBefore(dragging, nextSibling);
+  else list.appendChild(dragging);
+}
+
+function taskDragEnd() {
+  if (!dragState) return;
+  dragState.item.classList.remove('dragging');
+  document.removeEventListener('pointermove', taskDragMove);
+  document.removeEventListener('pointerup', taskDragEnd);
+  document.removeEventListener('pointercancel', taskDragEnd);
+
+  const ids = [...document.querySelectorAll('#taskList .task-item')].map(el => el.dataset.id);
+  ids.forEach((id, idx) => {
+    const it = items.find(i => i.id === id);
+    if (it) it.order = idx;
+  });
+  dragState = null;
+  saveItems();
+}
+
+function cyclePriority(id) {
+  const it = items.find(i => i.id === id);
+  if (!it || it.type === 'meeting') return;
+  it.priority = it.priority === 1 ? 2 : it.priority === 2 ? 3 : 1;
+  saveItems();
+  renderTaskList();
+  renderCalendar();
+  updateStats();
 }
 
 function escapeHtml(str) {
@@ -1388,8 +1510,9 @@ function renderCalendar() {
     const chipsHtml = shown.map(it => {
       const timeStr = it.time ? `<span class="cal-chip-time">${escapeHtml(it.time)}</span>` : '';
       if (it.type === 'meeting') {
-        const title = it.name + (it.withWhom ? ' — ' + it.withWhom : '') + (it.time ? ' о ' + it.time : '');
-        return `<div class="cal-chip chip-meeting" title="${escapeHtml(title)}" onclick="event.stopPropagation()">${timeStr}🤝 ${escapeHtml(it.name)}</div>`;
+        const title = it.name + (it.withWhom ? ' — ' + it.withWhom : '') + (it.time ? ' о ' + it.time : '') + (it.link ? ' 🔗' : '') + (it.description ? '\n' + it.description : '');
+        const linkMark = it.link ? ' 🔗' : '';
+        return `<div class="cal-chip chip-meeting" title="${escapeHtml(title)}" onclick="event.stopPropagation(); openMeetingModal('${it.id}')">${timeStr}🤝 ${escapeHtml(it.name)}${linkMark}</div>`;
       }
       const title = it.name + (it.from ? ' — від ' + it.from : '');
       return `<div class="cal-chip chip-task p${it.priority||3} ${it.done?'done-chip':''}" title="${escapeHtml(title)}" onclick="event.stopPropagation(); toggleItemDone('${it.id}')">${timeStr}📌 ${escapeHtml(it.name)}</div>`;
@@ -1417,6 +1540,55 @@ function renderUnscheduled() {
     const pClass = 'p' + (t.priority || 3);
     return `<div class="cal-chip chip-task ${pClass} ${t.done?'done-chip':''}" style="cursor:pointer;" onclick="toggleItemDone('${t.id}')" title="${escapeHtml(t.name)}${t.from ? ' — від ' + t.from : ''}">📌 ${escapeHtml(t.name)}</div>`;
   }).join('');
+}
+
+// ─── MEETING MODAL (description + link on click) ──────────────────────
+let currentMeetingId = null;
+
+function openMeetingModal(id) {
+  const it = items.find(i => i.id === id);
+  if (!it || it.type !== 'meeting') return;
+  currentMeetingId = id;
+  document.getElementById('meetingNameInput').value = it.name || '';
+  document.getElementById('meetingDateInput').value = it.date || '';
+  document.getElementById('meetingTimeInput').value = it.time || '';
+  document.getElementById('meetingWithInput').value = it.withWhom || '';
+  document.getElementById('meetingDescInput').value = it.description || '';
+  document.getElementById('meetingLinkInput').value = it.link || '';
+  document.getElementById('meetingModalOverlay').classList.remove('hidden');
+}
+
+function closeMeetingModal() {
+  document.getElementById('meetingModalOverlay').classList.add('hidden');
+  currentMeetingId = null;
+}
+
+function saveMeetingModal() {
+  const it = items.find(i => i.id === currentMeetingId);
+  if (!it) return;
+  const name = document.getElementById('meetingNameInput').value.trim();
+  const date = document.getElementById('meetingDateInput').value.trim();
+  if (!name || !parseIso(date)) {
+    alert('Перевір назву та дату (формат РРРР-ММ-ДД).');
+    return;
+  }
+  it.name = name;
+  it.date = date;
+  it.time = document.getElementById('meetingTimeInput').value.trim();
+  it.withWhom = document.getElementById('meetingWithInput').value.trim();
+  it.description = document.getElementById('meetingDescInput').value.trim();
+  it.link = document.getElementById('meetingLinkInput').value.trim();
+  saveItems();
+  renderCalendar();
+  closeMeetingModal();
+}
+
+function deleteMeetingModal() {
+  if (!currentMeetingId) return;
+  items = items.filter(i => i.id !== currentMeetingId);
+  saveItems();
+  renderCalendar();
+  closeMeetingModal();
 }
 
 // ─── ANTHROPIC API CALL ────────────────────────────────
@@ -1630,6 +1802,7 @@ ${meetingsContext}
               withWhom: '',
               priority: t.priority || 3,
               done: false,
+              order: Date.now(),
               created: new Date().toISOString()
             });
             addedNames.push(t.name);
@@ -1651,6 +1824,8 @@ ${meetingsContext}
               withWhom: m.withWhom || '',
               priority: 0,
               done: false,
+              description: '',
+              link: '',
               created: new Date().toISOString()
             });
             addedNames.push(m.name);
