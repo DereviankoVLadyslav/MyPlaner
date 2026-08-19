@@ -1262,13 +1262,14 @@ ${tasksContext}
 Сьогоднішня дата: ${new Date().toLocaleDateString('uk-UA', {weekday:'long', year:'numeric', month:'long', day:'numeric'})}.
 
 Твої можливості:
-1. Коли користувач додає задачу — витягни: назву, від кого (якщо сказано), пріоритет (1=терміново, 2=важливо, 3=планово), день тижня.
+1. Коли користувач додає задачу — витягни: назву, від кого (якщо сказано), пріоритет (1=терміново, 2=важливо, 3=планово), день тижня. Розраховуй dayKey (формат "день.місяць", напр. "21.8") сам, виходячи із сьогоднішньої дати вище.
 2. Відповідай корисно і по суті.
-3. Якщо додаєш задачі — поверни JSON в кінці у форматі:
+3. Якщо додаєш задачі — ЗАВЖДИ спочатку напиши коротке людське підтвердження (напр. "Додав задачу: підготувати звіт, від Іваненка, на п'ятницю, терміново ✅"), і лише ПІСЛЯ нього постав JSON-блок у форматі:
 \`\`\`json
 {"action":"add_tasks","tasks":[{"name":"...","from":"...","priority":1,"day":"Понеділок","dayKey":"16.6"}]}
 \`\`\`
-4. Якщо маркуєш як виконано — поверни:
+Ніколи не повертай ТІЛЬКИ JSON без тексту перед ним.
+4. Якщо маркуєш як виконано — так само спочатку напиши підтвердження, потім JSON:
 \`\`\`json
 {"action":"done","name":"..."}
 \`\`\`
@@ -1279,8 +1280,10 @@ ${tasksContext}
   try {
     const responseText = await callClaude(system, chatHistory.slice(-10));
 
-    const jsonMatch = responseText.match(/```json\n?([\s\S]*?)\n?```/);
-    let cleanText = responseText.replace(/```json\n?[\s\S]*?\n?```/g, '').trim();
+    const jsonMatch = responseText.match(/```json\s*([\s\S]*?)```/i);
+    let cleanText = responseText.replace(/```json\s*[\s\S]*?```/gi, '').trim();
+    let addedNames = [];
+    let jsonError = false;
 
     if (jsonMatch) {
       try {
@@ -1297,6 +1300,7 @@ ${tasksContext}
               done: false,
               created: new Date().toISOString()
             });
+            addedNames.push(t.name);
           });
           saveTasks();
           renderTaskList();
@@ -1307,10 +1311,26 @@ ${tasksContext}
           const found = tasks.find(t => t.name.toLowerCase().includes(action.name.toLowerCase()));
           if (found) { found.done = true; saveTasks(); renderTaskList(); renderWeek(); updateStats(); }
         }
-      } catch(e) {}
+      } catch(e) {
+        jsonError = true;
+      }
     }
 
     hideTyping();
+
+    // Fallback: if the model returned only a JSON block with no narration,
+    // synthesize a confirmation so the chat bubble is never empty.
+    if (!cleanText) {
+      if (addedNames.length) {
+        cleanText = 'Додав ✅: ' + addedNames.join(', ');
+      } else if (jsonError) {
+        cleanText = 'Отримав відповідь, але не зміг її розібрати. Спробуй сформулювати задачу трохи інакше.';
+      } else if (!responseText.trim()) {
+        cleanText = 'AI повернув порожню відповідь. Спробуй ще раз.';
+      } else {
+        cleanText = responseText.trim();
+      }
+    }
 
     const formatted = escapeHtml(cleanText)
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
