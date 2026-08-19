@@ -738,19 +738,20 @@
 </head>
 <body>
 
-<!-- PASSWORD GATE -->
+<!-- LOGIN GATE -->
 <div class="overlay" id="gateOverlay">
   <div class="gate-card">
     <div class="gate-logo">Планер ✦</div>
-    <div class="gate-sub">Приватний планер. Введи пароль щоб продовжити.</div>
-    <label class="field-label" for="gatePassword">Пароль</label>
-    <input type="password" id="gatePassword" placeholder="••••••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')tryUnlock()">
-    <div class="remember-row">
-      <input type="checkbox" id="rememberMe" checked>
-      <label for="rememberMe">Запам'ятати на цьому пристрої</label>
+    <div class="gate-sub" id="gateSub">Приватний планер. Увійди щоб продовжити — цей самий вхід синхронізує задачі між усіма пристроями.</div>
+    <div id="gateFormWrap">
+      <label class="field-label" for="gateEmail">Email</label>
+      <input type="text" id="gateEmail" placeholder="you@example.com" autocomplete="username" style="margin-bottom:14px;">
+      <label class="field-label" for="gatePassword">Пароль</label>
+      <input type="password" id="gatePassword" placeholder="••••••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')tryUnlock()">
+      <button class="primary-btn" onclick="tryUnlock()">Увійти</button>
+      <div class="gate-error" id="gateError"></div>
     </div>
-    <button class="primary-btn" onclick="tryUnlock()">Увійти</button>
-    <div class="gate-error" id="gateError"></div>
+    <div class="modal-note hidden" id="firebaseSetupNote"></div>
   </div>
 </div>
 
@@ -768,9 +769,10 @@
     <button class="secondary-btn" onclick="clearApiKey()">Видалити ключ</button>
     <div class="key-status" id="keyStatus"></div>
     <div class="modal-note">
-      Ключ можна створити на <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com/settings/keys</a>. Без ключа працюють задачі й тижневий вигляд, але чат з AI буде недоступний.
+      Ключ можна створити на <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com/settings/keys</a>. Без ключа працюють задачі й тижневий вигляд, але чат з AI буде недоступний. Ключ зберігається окремо на кожному пристрої (не синхронізується) — це навмисно, для безпеки.
     </div>
-    <button class="secondary-btn" onclick="logout()" style="margin-top:18px; border-color: rgba(248,113,113,0.4); color: var(--urgent);">Вийти й забути пароль на цьому пристрої</button>
+    <div class="key-status ok" id="syncStatus" style="margin-top:14px;"></div>
+    <button class="secondary-btn" onclick="logout()" style="margin-top:14px; border-color: rgba(248,113,113,0.4); color: var(--urgent);">Вийти з акаунту</button>
   </div>
 </div>
 
@@ -877,56 +879,79 @@
 
 <script>
 // ─── ACCESS CONFIG ─────────────────────────────────────
-// SHA-256 hash of the site password. Change PASSWORD_HASH to rotate the password
-// (compute a new hash with: echo -n 'newpassword' | sha256sum).
-const PASSWORD_HASH = '29347e59a4be0f44c7385aad509f119cc5e0a79d701bf359fb5317657d3113a0';
-const AUTH_KEY = 'planner_authed_v1';
+// Login + cross-device sync run on Firebase (Auth + Firestore).
+// window.__fb is populated by the <script type="module"> block below,
+// once it loads the Firebase SDK and connects with firebaseConfig.
 const APIKEY_STORAGE = 'planner_anthropic_key';
+const LEGACY_TASKS_KEY = 'planner_tasks'; // one-time migration source, see startApp()
 
-async function sha256Hex(text) {
-  const enc = new TextEncoder().encode(text);
-  const buf = await crypto.subtle.digest('SHA-256', enc);
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
+let currentUid = null;
 
 async function tryUnlock() {
-  const input = document.getElementById('gatePassword');
+  const emailEl = document.getElementById('gateEmail');
+  const passEl = document.getElementById('gatePassword');
   const errEl = document.getElementById('gateError');
-  const pass = input.value;
-  const hash = await sha256Hex(pass);
-  if (hash === PASSWORD_HASH) {
-    const remember = document.getElementById('rememberMe').checked;
-    if (remember) {
-      localStorage.setItem(AUTH_KEY, '1');
+  errEl.textContent = '';
+
+  if (!window.__fb) {
+    errEl.textContent = 'Firebase ще не налаштовано — див. підказку нижче.';
+    return;
+  }
+
+  const email = emailEl.value.trim();
+  const pass = passEl.value;
+  if (!email || !pass) {
+    errEl.textContent = 'Введи email і пароль.';
+    return;
+  }
+
+  try {
+    await window.__fb.login(email, pass);
+    // onAuthStateChanged (below) picks this up and calls startApp().
+  } catch (e) {
+    const code = e && e.code ? e.code : '';
+    if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found')) {
+      errEl.textContent = 'Невірний email або пароль.';
+    } else if (code.includes('too-many-requests')) {
+      errEl.textContent = 'Забагато спроб. Зачекай трохи й спробуй ще раз.';
+    } else if (code.includes('network-request-failed')) {
+      errEl.textContent = 'Немає з\'єднання з Firebase. Перевір інтернет.';
     } else {
-      sessionStorage.setItem(AUTH_KEY, '1');
+      errEl.textContent = 'Помилка входу: ' + (e.message || code || 'невідома помилка');
     }
-    document.getElementById('gateOverlay').classList.add('hidden');
-    errEl.textContent = '';
-    startApp();
-  } else {
-    errEl.textContent = 'Невірний пароль. Спробуй ще раз.';
-    input.value = '';
-    input.focus();
+    passEl.value = '';
   }
 }
 
 function logout() {
-  localStorage.removeItem(AUTH_KEY);
-  sessionStorage.removeItem(AUTH_KEY);
   closeSettings();
-  location.reload();
+  if (window.__fb) window.__fb.logout();
+  // onAuthStateChanged (below) will show the gate again once signed out.
 }
 
-function checkGate() {
-  const authed = localStorage.getItem(AUTH_KEY) === '1' || sessionStorage.getItem(AUTH_KEY) === '1';
-  if (authed) {
-    document.getElementById('gateOverlay').classList.add('hidden');
-    startApp();
+// Called by the module block once Firebase auth state is known.
+function onAuthReady(user) {
+  const gate = document.getElementById('gateOverlay');
+  if (user) {
+    currentUid = user.uid;
+    gate.classList.add('hidden');
+    startApp(user);
   } else {
-    document.getElementById('gateOverlay').classList.remove('hidden');
-    document.getElementById('gatePassword').focus();
+    currentUid = null;
+    appStarted = false;
+    if (unsubscribeTasks) { unsubscribeTasks(); unsubscribeTasks = null; }
+    document.getElementById('gateEmail').value = '';
+    document.getElementById('gatePassword').value = '';
+    gate.classList.remove('hidden');
+    document.getElementById('gateEmail').focus();
   }
+}
+
+function showFirebaseSetupNote(message) {
+  const el = document.getElementById('firebaseSetupNote');
+  el.innerHTML = message;
+  el.classList.remove('hidden');
+  document.getElementById('gateFormWrap').style.display = 'none';
 }
 
 // ─── SETTINGS / API KEY ────────────────────────────────
@@ -981,6 +1006,8 @@ function getApiKey() {
 // ─── STATE ───────────────────────────────────────────
 let tasks = [];
 let chatHistory = [];
+let unsubscribeTasks = null;
+let firstSnapshotHandled = false;
 
 const DAYS_UK = ['Неділя','Понеділок','Вівторок','Середа','Четвер','П\'ятниця','Субота'];
 const DAYS_SHORT = ['Нд','Пн','Вт','Ср','Чт','Пт','Сб'];
@@ -989,19 +1016,47 @@ const MONTHS_UK = ['січня','лютого','березня','квітня','
 let appStarted = false;
 
 // ─── INIT ─────────────────────────────────────────────
-function startApp() {
+function startApp(user) {
   if (appStarted) return;
   appStarted = true;
-  tasks = JSON.parse(localStorage.getItem('planner_tasks') || '[]');
+  firstSnapshotHandled = false;
+
   const now = new Date();
   document.getElementById('headerDate').textContent =
     `${now.getDate()} ${MONTHS_UK[now.getMonth()]} ${now.getFullYear()}`;
   document.getElementById('headerDay').textContent = DAYS_UK[now.getDay()];
   updateKeyBanner();
-  renderTaskList();
-  renderWeek();
-  updateStats();
-  doCheckin();
+  updateSyncStatus('Синхронізація…');
+
+  unsubscribeTasks = window.__fb.subscribeTasks(user.uid, async (cloudTasks, exists) => {
+    if (!exists) {
+      // First time this account is used — migrate any tasks that were
+      // sitting in this browser's old local-only storage, then create
+      // the cloud document so every other device sees the same list.
+      let migrated = [];
+      try { migrated = JSON.parse(localStorage.getItem(LEGACY_TASKS_KEY) || '[]'); } catch(e) {}
+      await window.__fb.saveTasks(user.uid, migrated);
+      localStorage.removeItem(LEGACY_TASKS_KEY);
+      tasks = migrated;
+    } else {
+      tasks = cloudTasks || [];
+    }
+    renderTaskList();
+    renderWeek();
+    updateStats();
+    updateSyncStatus('✓ Синхронізовано з усіма пристроями (' + (user.email || '') + ')');
+    if (!firstSnapshotHandled) {
+      firstSnapshotHandled = true;
+      doCheckin();
+    }
+  }, (err) => {
+    updateSyncStatus('⚠️ Помилка синхронізації: ' + (err.message || err.code || err));
+  });
+}
+
+function updateSyncStatus(text) {
+  const el = document.getElementById('syncStatus');
+  if (el) el.textContent = text;
 }
 
 // ─── TABS ─────────────────────────────────────────────
@@ -1076,7 +1131,10 @@ function clearDone() {
 }
 
 function saveTasks() {
-  localStorage.setItem('planner_tasks', JSON.stringify(tasks));
+  if (!currentUid || !window.__fb) return;
+  window.__fb.saveTasks(currentUid, tasks).catch(err => {
+    updateSyncStatus('⚠️ Не вдалось зберегти: ' + (err.message || err.code || err));
+  });
 }
 
 // ─── WEEK VIEW ────────────────────────────────────────
@@ -1362,7 +1420,65 @@ ${tasksContext}
 }
 
 // ─── START ─────────────────────────────────────────────
-checkGate();
+// Nothing to do here — the Firebase module block below calls onAuthReady()
+// once it knows whether we're signed in, and that shows the gate or starts the app.
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+  import {
+    getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
+    setPersistence, browserLocalPersistence
+  } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+  import {
+    getFirestore, doc, onSnapshot, setDoc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+  // ── ЗАПОВНИ ЦЕ своїм Firebase-конфігом ──
+  // Firebase Console → Project settings (⚙️) → General → "Your apps" → Web app (</>) → SDK setup and configuration.
+  // Ці значення НЕ є секретом (вони публічні для веб-застосунків Firebase) — доступ захищають Firestore Rules і сам логін,
+  // тож їх можна спокійно тримати прямо в цьому файлі.
+  const firebaseConfig = {
+    apiKey: "AIzaSyCI7T59nBLp_GOGQ65x199gexEjSKqjJ38",
+    authDomain: "myplaner-c8aea.firebaseapp.com",
+    projectId: "myplaner-c8aea",
+    storageBucket: "myplaner-c8aea.firebasestorage.app",
+    messagingSenderId: "437401094277",
+    appId: "1:437401094277:web:87a2ed73d1b36f25b001ec"
+  };
+
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf('ЗАМІНИ') === 0) {
+    showFirebaseSetupNote(
+      '⚠️ Firebase ще не налаштовано.<br><br>Відкрий <code>index.html</code>, знайди в самому кінці файлу об\'єкт ' +
+      '<code>firebaseConfig</code> і встав туди свій конфіг із Firebase Console ' +
+      '(Project settings → General → Your apps → Web app), тоді перезаливай файл у GitHub.'
+    );
+  } else {
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    setPersistence(auth, browserLocalPersistence).catch(() => {});
+
+    window.__fb = {
+      login: (email, password) => signInWithEmailAndPassword(auth, email, password),
+      logout: () => signOut(auth),
+      // onData(tasksArray, docExists) fires immediately with cached/local data,
+      // then again in real time whenever the doc changes on ANY device.
+      subscribeTasks: (uid, onData, onError) => {
+        const ref = doc(db, 'planners', uid);
+        return onSnapshot(ref, snap => {
+          onData(snap.exists() ? (snap.data().tasks || []) : [], snap.exists());
+        }, err => { if (onError) onError(err); });
+      },
+      saveTasks: (uid, tasksArray) => setDoc(doc(db, 'planners', uid), {
+        tasks: tasksArray,
+        updatedAt: serverTimestamp()
+      }, { merge: true })
+    };
+
+    onAuthStateChanged(auth, user => onAuthReady(user));
+  }
 </script>
 </body>
 </html>
