@@ -567,8 +567,11 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s;
   }
 
+  .cal-cell:hover { border-color: var(--accent); }
   .cal-cell.other-month { opacity: 0.35; }
   .cal-cell.today { border-color: var(--accent); background: var(--accent-glow); }
 
@@ -967,7 +970,7 @@
 <div class="overlay hidden" id="meetingModalOverlay">
   <div class="modal-card">
     <div class="modal-header">
-      <div class="modal-title">🤝 Нарада</div>
+      <div class="modal-title" id="meetingModalTitle">🤝 Нарада</div>
       <div class="modal-close" onclick="closeMeetingModal()">✕</div>
     </div>
     <label class="field-label" for="meetingNameInput">Назва</label>
@@ -989,7 +992,7 @@
     <label class="field-label" style="margin-top:14px;" for="meetingLinkInput">Посилання на зустріч</label>
     <input type="text" id="meetingLinkInput" placeholder="https://meet.google.com/...">
     <button class="primary-btn" onclick="saveMeetingModal()">Зберегти</button>
-    <button class="secondary-btn" onclick="deleteMeetingModal()" style="border-color: rgba(248,113,113,0.4); color: var(--urgent);">Видалити нараду</button>
+    <button class="secondary-btn" id="meetingModalDeleteBtn" onclick="deleteMeetingModal()" style="border-color: rgba(248,113,113,0.4); color: var(--urgent);">Видалити нараду</button>
   </div>
 </div>
 
@@ -1150,6 +1153,7 @@
             <input type="checkbox" id="calShowTasks" checked onchange="onCalShowTasksChange()">
             Показувати задачі
           </label>
+          <div class="cal-today-btn" onclick="openMeetingModal(null)">+ Нарада</div>
         </div>
       </div>
       <div class="cal-grid" id="calWeekdays"></div>
@@ -1626,7 +1630,7 @@ function renderCalendar() {
     }).join('');
     const moreHtml = extra > 0 ? `<div class="cal-more">+${extra} ще</div>` : '';
 
-    html += `<div class="cal-cell ${isOtherMonth?'other-month':''} ${isToday?'today':''}">
+    html += `<div class="cal-cell ${isOtherMonth?'other-month':''} ${isToday?'today':''}" onclick="openMeetingModal(null, '${iso}')" title="Клікни щоб додати нараду на цей день">
       <div class="cal-cell-date">${d.getDate()}</div>
       <div class="cal-cell-items">${chipsHtml}${moreHtml}</div>
     </div>`;
@@ -1654,16 +1658,23 @@ function renderUnscheduled() {
 // ─── MEETING MODAL (description + link on click) ──────────────────────
 let currentMeetingId = null;
 
-function openMeetingModal(id) {
-  const it = items.find(i => i.id === id);
-  if (!it || it.type !== 'meeting') return;
-  currentMeetingId = id;
-  document.getElementById('meetingNameInput').value = it.name || '';
-  document.getElementById('meetingDateInput').value = it.date || '';
-  document.getElementById('meetingTimeInput').value = it.time || '';
-  document.getElementById('meetingWithInput').value = it.withWhom || '';
-  document.getElementById('meetingDescInput').value = it.description || '';
-  document.getElementById('meetingLinkInput').value = it.link || '';
+function openMeetingModal(id, presetDate) {
+  const it = id ? items.find(i => i.id === id) : null;
+  if (id && (!it || it.type !== 'meeting')) return;
+  currentMeetingId = id || null;
+
+  const titleEl = document.getElementById('meetingModalTitle');
+  if (titleEl) titleEl.textContent = it ? '🤝 Нарада' : '🤝 Нова нарада';
+  document.getElementById('meetingNameInput').value = it ? (it.name || '') : '';
+  document.getElementById('meetingDateInput').value = it ? (it.date || '') : (presetDate || isoDate(new Date()));
+  document.getElementById('meetingTimeInput').value = it ? (it.time || '') : '';
+  document.getElementById('meetingWithInput').value = it ? (it.withWhom || '') : '';
+  document.getElementById('meetingDescInput').value = it ? (it.description || '') : '';
+  document.getElementById('meetingLinkInput').value = it ? (it.link || '') : '';
+
+  const delBtn = document.getElementById('meetingModalDeleteBtn');
+  if (delBtn) delBtn.style.display = it ? '' : 'none';
+
   document.getElementById('meetingModalOverlay').classList.remove('hidden');
 }
 
@@ -1673,13 +1684,24 @@ function closeMeetingModal() {
 }
 
 function saveMeetingModal() {
-  const it = items.find(i => i.id === currentMeetingId);
-  if (!it) return;
   const name = document.getElementById('meetingNameInput').value.trim();
   const date = document.getElementById('meetingDateInput').value.trim();
   if (!name || !parseIso(date)) {
     alert('Перевір назву та дату (формат РРРР-ММ-ДД).');
     return;
+  }
+
+  let it = currentMeetingId ? items.find(i => i.id === currentMeetingId) : null;
+  if (!it) {
+    it = {
+      id: Date.now() + '-' + Math.random().toString(36).slice(2),
+      type: 'meeting',
+      from: '',
+      priority: 0,
+      done: false,
+      created: new Date().toISOString()
+    };
+    items.push(it);
   }
   it.name = name;
   it.date = date;
@@ -1693,7 +1715,7 @@ function saveMeetingModal() {
 }
 
 function deleteMeetingModal() {
-  if (!currentMeetingId) return;
+  if (!currentMeetingId) { closeMeetingModal(); return; }
   items = items.filter(i => i.id !== currentMeetingId);
   saveItems();
   renderCalendar();
