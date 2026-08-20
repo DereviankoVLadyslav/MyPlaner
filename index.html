@@ -32,7 +32,13 @@
     font-family: 'Inter', sans-serif;
     background: var(--bg);
     color: var(--text);
-    min-height: 100vh;
+    /* Capped (not min-) height + hidden overflow is what forces tall
+       content (a long sidebar, a long chat) to scroll INSIDE its own
+       pane via .sidebar/.content, instead of growing the whole page and
+       pushing things like the chat input below the viewport. Reverted
+       back to natural document scrolling on narrow/mobile screens below. */
+    height: 100vh;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
   }
@@ -231,8 +237,14 @@
   .layout {
     display: grid;
     grid-template-columns: 340px 1fr;
+    /* flex-grow fills whatever's left under the header inside body's now-
+       fixed 100vh height; min-height:0 stops tall content (grid item's
+       default min-height:auto) from forcing this taller than that. An
+       explicit height here would actually be ignored anyway, since
+       flex-basis (from the flex:1 shorthand) wins over height on a flex
+       item's main axis — this instead lets flex-grow do the sizing. */
     flex: 1;
-    height: calc(100vh - 61px);
+    min-height: 0;
   }
 
   /* SIDEBAR */
@@ -241,8 +253,19 @@
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    /* Grid items default to min-height:auto, which lets a tall sidebar
+       (mini calendar + check-in + stats + many tasks) blow out this
+       fixed-height grid row and push the whole page — including the
+       chat input — below the viewport. min-height:0 makes the sidebar
+       actually respect .layout's height, so this scrollbar is the only
+       thing that moves instead of the whole page. */
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
   .sidebar-section {
     padding: 20px;
@@ -333,14 +356,10 @@
 
   /* TASK LIST */
   .task-list-wrap {
-    flex: 1;
-    overflow-y: auto;
+    /* The sidebar itself scrolls now (see .sidebar), so this just needs
+       to lay out normally — no nested scroll area inside another. */
     padding: 16px;
   }
-
-  .task-list-wrap::-webkit-scrollbar { width: 4px; }
-  .task-list-wrap::-webkit-scrollbar-track { background: transparent; }
-  .task-list-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
   .task-item {
     background: var(--surface2);
@@ -523,6 +542,7 @@
   .main {
     display: flex;
     flex-direction: column;
+    min-height: 0; /* same grid-blowout guard as .sidebar, above */
     overflow: hidden;
   }
 
@@ -1004,8 +1024,12 @@
   .dot.blue { background: var(--info); }
 
   @media (max-width: 900px) {
+    /* On narrow screens the sidebar and main pane stack into one normal
+       page instead of two fixed-height panes — so scroll the whole
+       document again here, rather than each pane internally. */
+    body { height: auto; min-height: 100vh; overflow: visible; }
     .layout { grid-template-columns: 1fr; height: auto; }
-    .sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+    .sidebar { border-right: none; border-bottom: 1px solid var(--border); overflow-y: visible; }
     .cal-grid { grid-template-columns: repeat(7, 1fr); gap: 4px; }
     .cal-cell { min-height: 60px; }
     .cal-cell-date { font-size: 10px; padding: 5px 5px 2px; }
