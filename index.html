@@ -12,9 +12,9 @@
     --surface: #ffffff;
     --surface2: #eef2f9;
     --border: #dbe3ef;
-    --accent: #3b6ea5;
-    --accent2: #2c5686;
-    --accent-glow: rgba(59,110,165,0.1);
+    --accent: #1e3a5f;
+    --accent2: #142943;
+    --accent-glow: rgba(30,58,95,0.1);
     --text: #0c1524;
     --text-muted: #5c6a82;
     --text-dim: #2a3650;
@@ -261,7 +261,7 @@
   /* CHECKIN */
   .checkin-card {
     background: var(--accent-glow);
-    border: 1px solid rgba(59,110,165,0.3);
+    border: 1px solid rgba(30,58,95,0.3);
     border-radius: 12px;
     padding: 16px;
   }
@@ -287,8 +287,8 @@
     margin-top: 12px;
     width: 100%;
     padding: 8px;
-    background: rgba(59,110,165,0.2);
-    border: 1px solid rgba(59,110,165,0.4);
+    background: rgba(30,58,95,0.2);
+    border: 1px solid rgba(30,58,95,0.4);
     border-radius: 8px;
     color: var(--accent);
     font-size: 12px;
@@ -298,7 +298,7 @@
     font-family: 'Inter', sans-serif;
   }
 
-  .checkin-btn:hover { background: rgba(59,110,165,0.3); }
+  .checkin-btn:hover { background: rgba(30,58,95,0.3); }
 
   /* STATS */
   .stats-row {
@@ -353,7 +353,7 @@
     position: relative;
   }
 
-  .task-item:hover { border-color: var(--accent); background: rgba(59,110,165,0.05); }
+  .task-item:hover { border-color: var(--accent); background: rgba(30,58,95,0.05); }
   .task-item.selected { border-color: var(--accent); background: var(--accent-glow); }
   .task-item.done-item { opacity: 0.5; }
 
@@ -409,6 +409,7 @@
 
   .tag.tag-clickable { cursor: pointer; transition: all 0.15s; }
   .tag.tag-clickable:hover { filter: brightness(1.25); transform: scale(1.04); }
+  .tag.repeat-tag { background: rgba(30,58,95,0.1); color: var(--accent); border: 1px solid rgba(30,58,95,0.3); }
 
   .drag-handle {
     color: var(--text-muted);
@@ -430,7 +431,93 @@
   .tag.p2 { background: rgba(201,154,74,0.15); color: var(--warning); border: 1px solid rgba(201,154,74,0.3); }
   .tag.p3 { background: rgba(91,147,189,0.15); color: var(--info); border: 1px solid rgba(91,147,189,0.3); }
   .tag.day-tag { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); }
-  .tag.from-tag { background: rgba(59,110,165,0.1); color: var(--accent); border: 1px solid rgba(59,110,165,0.2); }
+  .tag.from-tag { background: rgba(30,58,95,0.1); color: var(--accent); border: 1px solid rgba(30,58,95,0.2); }
+
+  /* MINI CALENDAR (sidebar) */
+  .mini-cal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .mini-cal-title { font-size: 12px; font-weight: 600; color: var(--text); text-transform: capitalize; }
+  .mini-cal-nav-btn {
+    width: 20px; height: 20px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-muted); cursor: pointer; border-radius: 5px;
+    font-size: 12px; transition: all 0.15s;
+  }
+  .mini-cal-nav-btn:hover { background: var(--surface2); color: var(--accent); }
+  .mini-cal-weekdays, .mini-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .mini-cal-weekdays { margin-bottom: 4px; }
+  .mini-cal-weekday { font-size: 9px; color: var(--text-muted); text-align: center; font-weight: 600; }
+  .mini-cal-cell {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    font-size: 10.5px; color: var(--text-dim); border-radius: 6px; cursor: pointer;
+    position: relative; transition: all 0.15s;
+  }
+  .mini-cal-cell:hover { background: var(--surface2); }
+  .mini-cal-cell.other-month { color: var(--text-muted); opacity: 0.4; }
+  .mini-cal-cell.today { background: var(--accent); color: #fff; font-weight: 700; }
+  .mini-cal-cell.has-items::after {
+    content: ''; position: absolute; bottom: 2px; width: 3px; height: 3px;
+    border-radius: 50%; background: var(--accent);
+  }
+  .mini-cal-cell.today.has-items::after { background: #fff; }
+  .mini-cal-today-btn {
+    margin-top: 8px; text-align: center; font-size: 11px; color: var(--accent);
+    cursor: pointer; font-weight: 500;
+  }
+  .mini-cal-today-btn:hover { text-decoration: underline; }
+
+  /* DAY VIEW (full-screen single day) */
+  .dayview-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 94vw;
+    max-width: 920px;
+    height: 88vh;
+    max-height: 820px;
+    box-shadow: 0 20px 60px rgba(30,58,138,0.18);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .dayview-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 22px; border-bottom: 1px solid var(--border); flex-shrink: 0; gap: 12px; flex-wrap: wrap;
+  }
+  .dayview-header-left, .dayview-header-right { display: flex; align-items: center; gap: 10px; }
+  .dayview-title { font-size: 16px; font-weight: 600; color: var(--text); text-transform: capitalize; }
+  .dayview-unscheduled { padding: 14px 22px 4px; flex-shrink: 0; }
+  .dayview-unscheduled-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 8px;
+  }
+  .dayview-unscheduled-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .dayview-body { flex: 1; overflow-y: auto; padding: 14px 22px 40px; }
+  .dayview-body::-webkit-scrollbar { width: 4px; }
+  .dayview-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .dayview-grid { position: relative; }
+  .dayview-hour-row {
+    display: flex; height: 52px; border-top: 1px solid var(--border); cursor: pointer; transition: background 0.15s;
+  }
+  .dayview-hour-row:hover { background: var(--surface2); }
+  .dayview-hour-row:first-child { border-top: none; }
+  .dayview-hour-label {
+    width: 56px; flex-shrink: 0; font-size: 10.5px; color: var(--text-muted);
+    padding: 4px 8px 0 0; text-align: right; box-sizing: border-box; user-select: none;
+  }
+  .dayview-hour-line { flex: 1; }
+  .dayview-events-col { position: absolute; top: 0; left: 56px; right: 0; bottom: 0; pointer-events: none; }
+  .dayview-event {
+    position: absolute; left: 6px; right: 6px;
+    background: var(--accent); color: #fff; border-radius: 8px; padding: 5px 10px;
+    font-size: 12px; overflow: hidden; cursor: pointer; pointer-events: auto;
+    box-shadow: 0 2px 8px rgba(30,58,95,0.3); transition: filter 0.15s;
+  }
+  .dayview-event:hover { filter: brightness(1.15); }
+  .dayview-event-time { font-weight: 600; font-size: 10.5px; opacity: 0.85; }
+  .dayview-event-name { font-weight: 600; line-height: 1.3; }
 
   /* MAIN */
   .main {
@@ -702,7 +789,7 @@
     font-size: 14px;
   }
 
-  .msg.ai .msg-avatar { background: var(--accent-glow); border: 1px solid rgba(59,110,165,0.3); }
+  .msg.ai .msg-avatar { background: var(--accent-glow); border: 1px solid rgba(30,58,95,0.3); }
   .msg.user .msg-avatar { background: var(--surface2); border: 1px solid var(--border); }
 
   .msg-bubble {
@@ -717,7 +804,7 @@
 
   .msg.user .msg-bubble {
     background: var(--accent-glow);
-    border-color: rgba(59,110,165,0.3);
+    border-color: rgba(30,58,95,0.3);
     color: var(--text);
   }
 
@@ -981,9 +1068,20 @@
         <input type="text" id="meetingDateInput" placeholder="РРРР-ММ-ДД">
       </div>
       <div style="flex:1;">
-        <label class="field-label" for="meetingTimeInput">Час</label>
+        <label class="field-label" for="meetingTimeInput">Час початку</label>
         <input type="text" id="meetingTimeInput" placeholder="ГГ:ХХ">
       </div>
+      <div style="flex:1;">
+        <label class="field-label" for="meetingEndTimeInput">Час завершення</label>
+        <input type="text" id="meetingEndTimeInput" placeholder="ГГ:ХХ">
+      </div>
+    </div>
+    <label class="field-label" style="margin-top:14px;">Повторення</label>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <span class="tag repeat-tag tag-clickable tag-choice" id="meetingRepeatChoiceNone" onclick="setMeetingModalRepeat('none')">Не повторюється</span>
+      <span class="tag repeat-tag tag-clickable tag-choice" id="meetingRepeatChoiceDaily" onclick="setMeetingModalRepeat('daily')">Щодня</span>
+      <span class="tag repeat-tag tag-clickable tag-choice" id="meetingRepeatChoiceWeekly" onclick="setMeetingModalRepeat('weekly')">Щотижня</span>
+      <span class="tag repeat-tag tag-clickable tag-choice" id="meetingRepeatChoiceMonthly" onclick="setMeetingModalRepeat('monthly')">Щомісяця</span>
     </div>
     <label class="field-label" style="margin-top:14px;" for="meetingWithInput">З ким</label>
     <input type="text" id="meetingWithInput" placeholder="Учасники">
@@ -993,6 +1091,31 @@
     <input type="text" id="meetingLinkInput" placeholder="https://meet.google.com/...">
     <button class="primary-btn" onclick="saveMeetingModal()">Зберегти</button>
     <button class="secondary-btn" id="meetingModalDeleteBtn" onclick="deleteMeetingModal()" style="border-color: rgba(209,101,94,0.4); color: var(--urgent);">Видалити нараду</button>
+  </div>
+</div>
+
+<!-- DAY VIEW (full-screen single day) -->
+<div class="overlay hidden" id="dayViewOverlay" style="z-index:900;" onclick="if(event.target===this) closeDayView()">
+  <div class="dayview-card">
+    <div class="dayview-header">
+      <div class="dayview-header-left">
+        <div class="cal-nav-btn" onclick="dayViewShift(-1)">‹</div>
+        <div class="dayview-title" id="dayViewTitle"></div>
+        <div class="cal-nav-btn" onclick="dayViewShift(1)">›</div>
+      </div>
+      <div class="dayview-header-right">
+        <div class="cal-today-btn" onclick="dayViewGoToday()">Сьогодні</div>
+        <div class="cal-today-btn" onclick="openMeetingModal(null, dayViewDate)">+ Нарада</div>
+        <div class="modal-close" onclick="closeDayView()">✕</div>
+      </div>
+    </div>
+    <div class="dayview-unscheduled hidden" id="dayViewUnscheduledWrap">
+      <div class="dayview-unscheduled-label">🗒️ Задачі на цей день</div>
+      <div class="dayview-unscheduled-list" id="dayViewUnscheduledList"></div>
+    </div>
+    <div class="dayview-body">
+      <div class="dayview-grid" id="dayViewGrid"></div>
+    </div>
   </div>
 </div>
 
@@ -1048,6 +1171,18 @@
 <div class="layout">
   <!-- SIDEBAR -->
   <div class="sidebar">
+    <!-- MINI CALENDAR -->
+    <div class="sidebar-section">
+      <div class="mini-cal-header">
+        <div class="mini-cal-nav-btn" onclick="miniCalShift(-1)">‹</div>
+        <div class="mini-cal-title" id="miniCalTitle"></div>
+        <div class="mini-cal-nav-btn" onclick="miniCalShift(1)">›</div>
+      </div>
+      <div class="mini-cal-weekdays" id="miniCalWeekdays"></div>
+      <div class="mini-cal-grid" id="miniCalGrid"></div>
+      <div class="mini-cal-today-btn" onclick="miniCalGoToday()">Сьогодні</div>
+    </div>
+
     <!-- CHECKIN -->
     <div class="sidebar-section">
       <div class="sidebar-label">☀️ Ранковий чек-ін</div>
@@ -1336,6 +1471,63 @@ let appStarted = false;
 function tasksOnly() { return items.filter(i => i.type === 'task' || !i.type); }
 function meetingsOnly() { return items.filter(i => i.type === 'meeting'); }
 
+// ─── RECURRING MEETINGS ────────────────────────────────
+// A meeting with repeat !== 'none' is stored ONCE (the "master") with its
+// first occurrence's date. Rendering expands it into virtual occurrences
+// for whatever date range is currently on screen — nothing is duplicated
+// in Firestore. Virtual occurrence ids look like "<masterId>::<dateIso>";
+// realMeetingId() (near the meeting modal code) strips that back off so
+// editing/deleting always acts on the one real item (the whole series).
+function stepDate(d, repeat) {
+  const nd = new Date(d);
+  if (repeat === 'daily') nd.setDate(nd.getDate() + 1);
+  else if (repeat === 'weekly') nd.setDate(nd.getDate() + 7);
+  else if (repeat === 'monthly') nd.setMonth(nd.getMonth() + 1);
+  return nd;
+}
+
+function occurrencesForMeeting(m, rangeStart, rangeEnd) {
+  if (!m.date) return [];
+  const baseDate = parseIso(m.date);
+  if (!baseDate) return [];
+  if (!m.repeat || m.repeat === 'none') {
+    return (baseDate >= rangeStart && baseDate <= rangeEnd) ? [baseDate] : [];
+  }
+  const out = [];
+  let cur = new Date(baseDate);
+  let guard = 0;
+  while (cur <= rangeEnd && guard < 1000) {
+    if (cur >= rangeStart) out.push(new Date(cur));
+    cur = stepDate(cur, m.repeat);
+    guard++;
+  }
+  return out;
+}
+
+// Expands every item onto the given date range: meetings become one entry
+// per occurrence (real id for a one-off, "master::date" for a recurring
+// instance); tasks and everything else pass through unchanged.
+function expandedCalendarItems(rangeStart, rangeEnd) {
+  const out = [];
+  items.forEach(it => {
+    if (it.type === 'meeting') {
+      const isRecurring = it.repeat && it.repeat !== 'none';
+      occurrencesForMeeting(it, rangeStart, rangeEnd).forEach(occDate => {
+        const occIso = isoDate(occDate);
+        out.push({ ...it, date: occIso, id: isRecurring ? `${it.id}::${occIso}` : it.id });
+      });
+    } else {
+      out.push(it);
+    }
+  });
+  return out;
+}
+
+function timeRangeStr(it) {
+  if (!it.time) return '';
+  return it.endTime ? `${it.time}–${it.endTime}` : it.time;
+}
+
 // ─── INIT ─────────────────────────────────────────────
 function startApp(user) {
   if (appStarted) return;
@@ -1598,7 +1790,9 @@ function renderCalendar() {
   const firstOfMonth = new Date(year, month, 1);
   const firstWeekday = (firstOfMonth.getDay() + 6) % 7; // Monday = 0
   const gridStart = new Date(year, month, 1 - firstWeekday);
+  const gridEnd = new Date(gridStart); gridEnd.setDate(gridStart.getDate() + 41);
   const today = new Date();
+  const expanded = expandedCalendarItems(gridStart, gridEnd);
 
   let html = '';
   for (let i = 0; i < 42; i++) {
@@ -1608,7 +1802,7 @@ function renderCalendar() {
     const isOtherMonth = d.getMonth() !== month;
     const isToday = sameDay(d, today);
 
-    const dayItems = items
+    const dayItems = expanded
       .filter(it => it.date === iso && (it.type === 'meeting' || showTasksOnCalendar))
       .sort((a,b) => (a.time||'99:99').localeCompare(b.time||'99:99'));
 
@@ -1617,11 +1811,12 @@ function renderCalendar() {
     const extra = dayItems.length - shown.length;
 
     const chipsHtml = shown.map(it => {
-      const timeStr = it.time ? `<span class="cal-chip-time">${escapeHtml(it.time)}</span>` : '';
+      const timeStr = it.time ? `<span class="cal-chip-time">${escapeHtml(timeRangeStr(it))}</span>` : '';
       if (it.type === 'meeting') {
-        const title = it.name + (it.withWhom ? ' — ' + it.withWhom : '') + (it.time ? ' о ' + it.time : '') + (it.link ? ' 🔗' : '') + (it.description ? '\n' + it.description : '');
+        const repeatMark = (it.repeat && it.repeat !== 'none') ? ' 🔁' : '';
+        const title = it.name + (it.withWhom ? ' — ' + it.withWhom : '') + (it.time ? ' о ' + timeRangeStr(it) : '') + (it.link ? ' 🔗' : '') + (repeatMark ? ' (повторюється)' : '') + (it.description ? '\n' + it.description : '');
         const linkMark = it.link ? ' 🔗' : '';
-        return `<div class="cal-chip chip-meeting" title="${escapeHtml(title)}" onclick="event.stopPropagation(); openMeetingModal('${it.id}')">${timeStr}🤝 ${escapeHtml(it.name)}${linkMark}</div>`;
+        return `<div class="cal-chip chip-meeting" title="${escapeHtml(title)}" onclick="event.stopPropagation(); openMeetingModal('${it.id}')">${timeStr}🤝 ${escapeHtml(it.name)}${linkMark}${repeatMark}</div>`;
       }
       const cat = it.category === 'strategic' ? 'strategic' : 'operational';
       const catDot = `<span class="cat-dot cat-${cat}" title="${cat === 'strategic' ? 'Стратегічна' : 'Операційна'}"></span>`;
@@ -1630,7 +1825,7 @@ function renderCalendar() {
     }).join('');
     const moreHtml = extra > 0 ? `<div class="cal-more">+${extra} ще</div>` : '';
 
-    html += `<div class="cal-cell ${isOtherMonth?'other-month':''} ${isToday?'today':''}" onclick="openMeetingModal(null, '${iso}')" title="Клікни щоб додати нараду на цей день">
+    html += `<div class="cal-cell ${isOtherMonth?'other-month':''} ${isToday?'today':''}" onclick="openDayView('${iso}')" title="Клікни щоб відкрити день повністю">
       <div class="cal-cell-date">${d.getDate()}</div>
       <div class="cal-cell-items">${chipsHtml}${moreHtml}</div>
     </div>`;
@@ -1638,6 +1833,11 @@ function renderCalendar() {
   document.getElementById('calGrid').innerHTML = html;
 
   renderUnscheduled();
+  renderMiniCalendar();
+  // Keep the full-screen day view live if it's open while items change
+  // underneath it (e.g. editing a meeting from within the day view itself).
+  const dvOverlay = document.getElementById('dayViewOverlay');
+  if (dvOverlay && !dvOverlay.classList.contains('hidden')) renderDayView();
 }
 
 function renderUnscheduled() {
@@ -1655,22 +1855,184 @@ function renderUnscheduled() {
   }).join('');
 }
 
+// ─── MINI CALENDAR (sidebar, always visible) ──────────────────────────
+let miniCalMonth = startOfMonth(new Date());
+
+function miniCalShift(delta) {
+  miniCalMonth = new Date(miniCalMonth.getFullYear(), miniCalMonth.getMonth() + delta, 1);
+  renderMiniCalendar();
+}
+
+function miniCalGoToday() {
+  const iso = isoDate(new Date());
+  miniCalMonth = startOfMonth(new Date());
+  calendarMonth = startOfMonth(new Date());
+  switchTab('calendar');
+  openDayView(iso);
+}
+
+function miniCalDayClick(iso) {
+  const d = parseIso(iso);
+  if (!d) return;
+  miniCalMonth = startOfMonth(d);
+  calendarMonth = startOfMonth(d);
+  switchTab('calendar');
+  openDayView(iso);
+}
+
+function renderMiniCalendar() {
+  const grid = document.getElementById('miniCalGrid');
+  if (!grid) return;
+  const year = miniCalMonth.getFullYear();
+  const month = miniCalMonth.getMonth();
+  document.getElementById('miniCalTitle').textContent = `${MONTHS_UK[month]} ${year}`;
+
+  const wEl = document.getElementById('miniCalWeekdays');
+  if (wEl && !wEl.dataset.filled) {
+    wEl.innerHTML = ['Пн','Вт','Ср','Чт','Пт','Сб','Нд'].map(d => `<div class="mini-cal-weekday">${d}</div>`).join('');
+    wEl.dataset.filled = '1';
+  }
+
+  const firstOfMonth = new Date(year, month, 1);
+  const firstWeekday = (firstOfMonth.getDay() + 6) % 7; // Monday = 0
+  const gridStart = new Date(year, month, 1 - firstWeekday);
+  const rangeEnd = new Date(gridStart); rangeEnd.setDate(gridStart.getDate() + 41);
+  const today = new Date();
+  const expanded = expandedCalendarItems(gridStart, rangeEnd);
+  const itemDates = new Set(expanded.map(it => it.date));
+
+  let html = '';
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + i);
+    const iso = isoDate(d);
+    const isOtherMonth = d.getMonth() !== month;
+    const isToday = sameDay(d, today);
+    const hasItems = itemDates.has(iso);
+    html += `<div class="mini-cal-cell ${isOtherMonth?'other-month':''} ${isToday?'today':''} ${hasItems?'has-items':''}" onclick="miniCalDayClick('${iso}')">${d.getDate()}</div>`;
+  }
+  grid.innerHTML = html;
+}
+
+// ─── DAY VIEW (full-screen single day, hourly grid) ───────────────────
+let dayViewDate = null; // ISO date currently shown, or null when closed
+const DAYVIEW_ROW_H = 52; // px per hour
+
+function openDayView(iso) {
+  dayViewDate = iso;
+  renderDayView();
+  document.getElementById('dayViewOverlay').classList.remove('hidden');
+  // Scroll roughly to 8:00 by default so the working day is in view — done
+  // after unhiding, since a display:none element has no scrollable layout yet.
+  const body = document.querySelector('#dayViewOverlay .dayview-body');
+  if (body) body.scrollTop = Math.max(8 * DAYVIEW_ROW_H - 40, 0);
+}
+
+function closeDayView() {
+  document.getElementById('dayViewOverlay').classList.add('hidden');
+}
+
+function dayViewShift(delta) {
+  const d = parseIso(dayViewDate) || new Date();
+  d.setDate(d.getDate() + delta);
+  dayViewDate = isoDate(d);
+  renderDayView();
+}
+
+function dayViewGoToday() {
+  dayViewDate = isoDate(new Date());
+  renderDayView();
+}
+
+function dayViewToMinutes(t) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(t || '');
+  return m ? (parseInt(m[1], 10) * 60 + parseInt(m[2], 10)) : null;
+}
+
+function renderDayView() {
+  if (!dayViewDate) return;
+  const d = parseIso(dayViewDate);
+  if (!d) return;
+
+  document.getElementById('dayViewTitle').textContent =
+    `${DAYS_UK[d.getDay()]}, ${d.getDate()} ${MONTHS_UK[d.getMonth()]} ${d.getFullYear()}`;
+
+  // Tasks due this day — shown as a strip above the hourly grid since
+  // tasks carry only a date, not a time.
+  const dayTasks = tasksOnly().filter(t => t.date === dayViewDate);
+  const unWrap = document.getElementById('dayViewUnscheduledWrap');
+  if (dayTasks.length === 0) {
+    unWrap.classList.add('hidden');
+  } else {
+    unWrap.classList.remove('hidden');
+    document.getElementById('dayViewUnscheduledList').innerHTML = dayTasks.map(t => {
+      const pClass = 'p' + (t.priority || 3);
+      const cat = t.category === 'strategic' ? 'strategic' : 'operational';
+      const catDot = `<span class="cat-dot cat-${cat}" title="${cat === 'strategic' ? 'Стратегічна' : 'Операційна'}"></span>`;
+      return `<div class="cal-chip chip-task ${pClass} ${t.done?'done-chip':''}" style="cursor:pointer;" onclick="event.stopPropagation(); openTaskModal('${t.id}')">${catDot}📌 ${escapeHtml(t.name)}</div>`;
+    }).join('');
+  }
+
+  // Hourly grid with meeting occurrences (recurring meetings expanded).
+  const rangeStart = new Date(d); rangeStart.setHours(0,0,0,0);
+  const rangeEnd = new Date(d); rangeEnd.setHours(23,59,59,999);
+  const dayMeetings = expandedCalendarItems(rangeStart, rangeEnd)
+    .filter(it => it.type === 'meeting' && it.date === dayViewDate);
+
+  let rowsHtml = '';
+  for (let h = 0; h < 24; h++) {
+    rowsHtml += `<div class="dayview-hour-row" onclick="openMeetingModal(null, '${dayViewDate}', '${pad2(h)}:00')" title="Клікни щоб додати нараду о ${pad2(h)}:00">
+      <div class="dayview-hour-label">${pad2(h)}:00</div>
+      <div class="dayview-hour-line"></div>
+    </div>`;
+  }
+
+  const eventsHtml = dayMeetings.map(it => {
+    const startMin = dayViewToMinutes(it.time);
+    if (startMin === null) return ''; // no time set — still visible via the month/mini calendars
+    let endMin = dayViewToMinutes(it.endTime);
+    if (endMin === null || endMin <= startMin) endMin = startMin + 30;
+    const top = (startMin / 60) * DAYVIEW_ROW_H;
+    const height = Math.max(((endMin - startMin) / 60) * DAYVIEW_ROW_H - 2, 22);
+    const repeatMark = (it.repeat && it.repeat !== 'none') ? ' 🔁' : '';
+    const title = it.name + (it.withWhom ? ' — ' + it.withWhom : '') + (it.link ? ' 🔗' : '') + (it.description ? '\n' + it.description : '');
+    return `<div class="dayview-event" style="top:${top}px; height:${height}px;" title="${escapeHtml(title)}" onclick="event.stopPropagation(); openMeetingModal('${it.id}')">
+      <div class="dayview-event-time">${escapeHtml(timeRangeStr(it))}${repeatMark}</div>
+      <div class="dayview-event-name">🤝 ${escapeHtml(it.name)}${it.link ? ' 🔗' : ''}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('dayViewGrid').innerHTML =
+    `${rowsHtml}<div class="dayview-events-col">${eventsHtml}</div>`;
+}
+
 // ─── MEETING MODAL (description + link on click) ──────────────────────
 let currentMeetingId = null;
+let meetingModalRepeat = 'none';
 
-function openMeetingModal(id, presetDate) {
-  const it = id ? items.find(i => i.id === id) : null;
+// Recurring-meeting occurrence chips on the calendar use a virtual id
+// "<masterId>::<occurrenceDateIso>" so a click can still resolve back to
+// the one real Firestore item (the whole series is edited/deleted together).
+function realMeetingId(id) {
+  return id && id.includes('::') ? id.split('::')[0] : id;
+}
+
+function openMeetingModal(id, presetDate, presetTime) {
+  const masterId = realMeetingId(id);
+  const it = masterId ? items.find(i => i.id === masterId) : null;
   if (id && (!it || it.type !== 'meeting')) return;
-  currentMeetingId = id || null;
+  currentMeetingId = masterId || null;
 
   const titleEl = document.getElementById('meetingModalTitle');
   if (titleEl) titleEl.textContent = it ? '🤝 Нарада' : '🤝 Нова нарада';
   document.getElementById('meetingNameInput').value = it ? (it.name || '') : '';
   document.getElementById('meetingDateInput').value = it ? (it.date || '') : (presetDate || isoDate(new Date()));
-  document.getElementById('meetingTimeInput').value = it ? (it.time || '') : '';
+  document.getElementById('meetingTimeInput').value = it ? (it.time || '') : (presetTime || '');
+  document.getElementById('meetingEndTimeInput').value = it ? (it.endTime || '') : '';
   document.getElementById('meetingWithInput').value = it ? (it.withWhom || '') : '';
   document.getElementById('meetingDescInput').value = it ? (it.description || '') : '';
   document.getElementById('meetingLinkInput').value = it ? (it.link || '') : '';
+  setMeetingModalRepeat(it ? (it.repeat || 'none') : 'none');
 
   const delBtn = document.getElementById('meetingModalDeleteBtn');
   if (delBtn) delBtn.style.display = it ? '' : 'none';
@@ -1683,11 +2045,26 @@ function closeMeetingModal() {
   currentMeetingId = null;
 }
 
+function setMeetingModalRepeat(r) {
+  meetingModalRepeat = r;
+  ['None','Daily','Weekly','Monthly'].forEach(label => {
+    const key = label.toLowerCase();
+    const el = document.getElementById('meetingRepeatChoice' + label);
+    if (el) el.classList.toggle('tag-active', key === r);
+  });
+}
+
 function saveMeetingModal() {
   const name = document.getElementById('meetingNameInput').value.trim();
   const date = document.getElementById('meetingDateInput').value.trim();
   if (!name || !parseIso(date)) {
     alert('Перевір назву та дату (формат РРРР-ММ-ДД).');
+    return;
+  }
+  const time = document.getElementById('meetingTimeInput').value.trim();
+  const endTime = document.getElementById('meetingEndTimeInput').value.trim();
+  if (time && endTime && endTime <= time) {
+    alert('Час завершення має бути пізніше за час початку.');
     return;
   }
 
@@ -1705,7 +2082,9 @@ function saveMeetingModal() {
   }
   it.name = name;
   it.date = date;
-  it.time = document.getElementById('meetingTimeInput').value.trim();
+  it.time = time;
+  it.endTime = endTime;
+  it.repeat = meetingModalRepeat;
   it.withWhom = document.getElementById('meetingWithInput').value.trim();
   it.description = document.getElementById('meetingDescInput').value.trim();
   it.link = document.getElementById('meetingLinkInput').value.trim();
