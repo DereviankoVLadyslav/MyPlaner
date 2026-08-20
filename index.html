@@ -1993,7 +1993,7 @@ function renderDayView() {
     let endMin = dayViewToMinutes(it.endTime);
     if (endMin === null || endMin <= startMin) endMin = startMin + 30;
     const top = (startMin / 60) * DAYVIEW_ROW_H;
-    const height = Math.max(((endMin - startMin) / 60) * DAYVIEW_ROW_H - 2, 22);
+    const height = Math.max(((endMin - startMin) / 60) * DAYVIEW_ROW_H - 2, 38);
     const repeatMark = (it.repeat && it.repeat !== 'none') ? ' 🔁' : '';
     const title = it.name + (it.withWhom ? ' — ' + it.withWhom : '') + (it.link ? ' 🔗' : '') + (it.description ? '\n' + it.description : '');
     return `<div class="dayview-event" style="top:${top}px; height:${height}px;" title="${escapeHtml(title)}" onclick="event.stopPropagation(); openMeetingModal('${it.id}')">
