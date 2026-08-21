@@ -8,22 +8,22 @@
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap');
 
   :root {
-    --bg: #f3f6fb;
-    --surface: #ffffff;
-    --surface2: #eef2f9;
-    --border: #dbe3ef;
-    --accent: #1e3a5f;
-    --accent2: #142943;
-    --accent-glow: rgba(30,58,95,0.1);
-    --text: #0c1524;
-    --text-muted: #5c6a82;
-    --text-dim: #2a3650;
-    --urgent: #d1655e;
-    --warning: #c99a4a;
-    --success: #4c9d81;
-    --info: #5b93bd;
-    --cat-strategic: #c99a4a;
-    --cat-operational: #4c9d81;
+    --bg: #eef2e3;
+    --surface: #fbfaf2;
+    --surface2: #eef0df;
+    --border: #d9ddc7;
+    --accent: #4f7a4a;
+    --accent2: #375a34;
+    --accent-glow: rgba(79,122,74,0.12);
+    --text: #1e2b19;
+    --text-muted: #707d66;
+    --text-dim: #33422e;
+    --urgent: #c15b45;
+    --warning: #b98a3d;
+    --success: #3f9d6b;
+    --info: #4f8a92;
+    --cat-strategic: #b98a3d;
+    --cat-operational: #3f9d6b;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -45,7 +45,7 @@
 
   /* GATE / MODALS */
   .overlay {
-    position: fixed; inset: 0; background: rgba(15,27,51,0.45);
+    position: fixed; inset: 0; background: rgba(18,26,14,0.45);
     display: flex; align-items: center; justify-content: center;
     z-index: 1000; backdrop-filter: blur(4px);
   }
@@ -58,7 +58,7 @@
     padding: 32px;
     width: 380px;
     max-width: 90vw;
-    box-shadow: 0 20px 60px rgba(30,58,138,0.18);
+    box-shadow: 0 20px 60px rgba(24,48,20,0.18);
   }
 
   .gate-logo {
@@ -284,7 +284,7 @@
   /* CHECKIN */
   .checkin-card {
     background: var(--accent-glow);
-    border: 1px solid rgba(30,58,95,0.3);
+    border: 1px solid rgba(79,122,74,0.3);
     border-radius: 12px;
     padding: 16px;
   }
@@ -310,8 +310,8 @@
     margin-top: 12px;
     width: 100%;
     padding: 8px;
-    background: rgba(30,58,95,0.2);
-    border: 1px solid rgba(30,58,95,0.4);
+    background: rgba(79,122,74,0.2);
+    border: 1px solid rgba(79,122,74,0.4);
     border-radius: 8px;
     color: var(--accent);
     font-size: 12px;
@@ -321,7 +321,7 @@
     font-family: 'Inter', sans-serif;
   }
 
-  .checkin-btn:hover { background: rgba(30,58,95,0.3); }
+  .checkin-btn:hover { background: rgba(79,122,74,0.3); }
 
   /* STATS */
   .stats-row {
@@ -372,7 +372,7 @@
     position: relative;
   }
 
-  .task-item:hover { border-color: var(--accent); background: rgba(30,58,95,0.05); }
+  .task-item:hover { border-color: var(--accent); background: rgba(79,122,74,0.05); }
   .task-item.selected { border-color: var(--accent); background: var(--accent-glow); }
   .task-item.done-item { opacity: 0.5; }
 
@@ -428,7 +428,7 @@
 
   .tag.tag-clickable { cursor: pointer; transition: all 0.15s; }
   .tag.tag-clickable:hover { filter: brightness(1.25); transform: scale(1.04); }
-  .tag.repeat-tag { background: rgba(30,58,95,0.1); color: var(--accent); border: 1px solid rgba(30,58,95,0.3); }
+  .tag.repeat-tag { background: rgba(79,122,74,0.1); color: var(--accent); border: 1px solid rgba(79,122,74,0.3); }
 
   .drag-handle {
     color: var(--text-muted);
@@ -446,11 +446,11 @@
   .task-item.dragging { opacity: 0.45; border-color: var(--accent); }
   .task-item-top { position: relative; }
 
-  .tag.p1 { background: rgba(209,101,94,0.15); color: var(--urgent); border: 1px solid rgba(209,101,94,0.3); }
-  .tag.p2 { background: rgba(201,154,74,0.15); color: var(--warning); border: 1px solid rgba(201,154,74,0.3); }
-  .tag.p3 { background: rgba(91,147,189,0.15); color: var(--info); border: 1px solid rgba(91,147,189,0.3); }
+  .tag.p1 { background: rgba(193,91,69,0.15); color: var(--urgent); border: 1px solid rgba(193,91,69,0.3); }
+  .tag.p2 { background: rgba(185,138,61,0.15); color: var(--warning); border: 1px solid rgba(185,138,61,0.3); }
+  .tag.p3 { background: rgba(79,138,146,0.15); color: var(--info); border: 1px solid rgba(79,138,146,0.3); }
   .tag.day-tag { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); }
-  .tag.from-tag { background: rgba(30,58,95,0.1); color: var(--accent); border: 1px solid rgba(30,58,95,0.2); }
+  .tag.from-tag { background: rgba(79,122,74,0.1); color: var(--accent); border: 1px solid rgba(79,122,74,0.2); }
 
   /* MINI CALENDAR (sidebar) */
   .mini-cal-header {
@@ -496,7 +496,7 @@
     max-width: 920px;
     height: 88vh;
     max-height: 820px;
-    box-shadow: 0 20px 60px rgba(30,58,138,0.18);
+    box-shadow: 0 20px 60px rgba(24,48,20,0.18);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -532,7 +532,7 @@
     position: absolute; left: 6px; right: 6px;
     background: var(--accent); color: #fff; border-radius: 8px; padding: 5px 10px;
     font-size: 12px; overflow: hidden; cursor: pointer; pointer-events: auto;
-    box-shadow: 0 2px 8px rgba(30,58,95,0.3); transition: filter 0.15s;
+    box-shadow: 0 2px 8px rgba(79,122,74,0.3); transition: filter 0.15s;
   }
   .dayview-event:hover { filter: brightness(1.15); }
   .dayview-event-time { font-weight: 600; font-size: 10.5px; opacity: 0.85; }
@@ -583,7 +583,7 @@
     position: absolute; left: 2px; right: 2px;
     background: var(--accent); color: #fff; border-radius: 6px; padding: 3px 6px;
     font-size: 10.5px; line-height: 1.25; overflow: hidden; cursor: pointer; pointer-events: auto;
-    box-shadow: 0 1px 4px rgba(30,58,95,0.3); transition: filter 0.15s;
+    box-shadow: 0 1px 4px rgba(79,122,74,0.3); transition: filter 0.15s;
   }
   .weekview-event:hover { filter: brightness(1.15); }
   .weekview-event-time { font-weight: 600; opacity: 0.85; display: block; font-size: 9.5px; }
@@ -765,7 +765,7 @@
   .cal-chip:hover { filter: brightness(1.15); }
 
   .cal-chip.chip-meeting {
-    background: rgba(91,147,189,0.14);
+    background: rgba(79,138,146,0.14);
     border-left-color: var(--info);
     color: var(--text);
   }
@@ -819,8 +819,8 @@
 
   .tag-choice { opacity: 0.4; }
   .tag-choice.tag-active { opacity: 1; box-shadow: 0 0 0 1.5px currentColor inset; }
-  .cat-tag-strategic { background: rgba(201,154,74,0.15); color: var(--cat-strategic); border: 1px solid rgba(201,154,74,0.3); }
-  .cat-tag-operational { background: rgba(76,157,129,0.15); color: var(--cat-operational); border: 1px solid rgba(76,157,129,0.3); }
+  .cat-tag-strategic { background: rgba(185,138,61,0.15); color: var(--cat-strategic); border: 1px solid rgba(185,138,61,0.3); }
+  .cat-tag-operational { background: rgba(63,157,107,0.15); color: var(--cat-operational); border: 1px solid rgba(63,157,107,0.3); }
 
   /* CHAT */
   .chat-wrap {
@@ -860,7 +860,7 @@
     font-size: 14px;
   }
 
-  .msg.ai .msg-avatar { background: var(--accent-glow); border: 1px solid rgba(30,58,95,0.3); }
+  .msg.ai .msg-avatar { background: var(--accent-glow); border: 1px solid rgba(79,122,74,0.3); }
   .msg.user .msg-avatar { background: var(--surface2); border: 1px solid var(--border); }
 
   .msg-bubble {
@@ -875,7 +875,7 @@
 
   .msg.user .msg-bubble {
     background: var(--accent-glow);
-    border-color: rgba(30,58,95,0.3);
+    border-color: rgba(79,122,74,0.3);
     color: var(--text);
   }
 
@@ -952,7 +952,7 @@
   }
   .mic-btn:hover { border-color: var(--accent); color: var(--accent); }
   .mic-btn.listening {
-    background: rgba(209,101,94,0.15);
+    background: rgba(193,91,69,0.15);
     border-color: var(--urgent);
     color: var(--urgent);
     animation: mic-pulse 1.4s infinite;
@@ -960,8 +960,8 @@
   .mic-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
   @keyframes mic-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(209,101,94,0.35); }
-    50% { box-shadow: 0 0 0 8px rgba(209,101,94,0); }
+    0%, 100% { box-shadow: 0 0 0 0 rgba(193,91,69,0.35); }
+    50% { box-shadow: 0 0 0 8px rgba(193,91,69,0); }
   }
 
   .quick-chips {
@@ -986,8 +986,8 @@
   .chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
 
   .key-banner {
-    background: rgba(201,154,74,0.1);
-    border: 1px solid rgba(201,154,74,0.3);
+    background: rgba(185,138,61,0.1);
+    border: 1px solid rgba(185,138,61,0.3);
     border-radius: 10px;
     padding: 10px 14px;
     font-size: 12px;
@@ -1124,7 +1124,7 @@
       Ключ можна створити на <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com/settings/keys</a>. Без ключа працюють задачі й тижневий вигляд, але чат з AI буде недоступний. Ключ зберігається окремо на кожному пристрої (не синхронізується) — це навмисно, для безпеки.
     </div>
     <div class="key-status ok" id="syncStatus" style="margin-top:14px;"></div>
-    <button class="secondary-btn" onclick="logout()" style="margin-top:14px; border-color: rgba(209,101,94,0.4); color: var(--urgent);">Вийти з акаунту</button>
+    <button class="secondary-btn" onclick="logout()" style="margin-top:14px; border-color: rgba(193,91,69,0.4); color: var(--urgent);">Вийти з акаунту</button>
   </div>
 </div>
 
@@ -1177,7 +1177,7 @@
     <label class="field-label" style="margin-top:14px;" for="meetingLinkInput">Посилання на зустріч</label>
     <input type="text" id="meetingLinkInput" placeholder="https://meet.google.com/...">
     <button class="primary-btn" onclick="saveMeetingModal()">Зберегти</button>
-    <button class="secondary-btn" id="meetingModalDeleteBtn" onclick="deleteMeetingModal()" style="border-color: rgba(209,101,94,0.4); color: var(--urgent);">Видалити нараду</button>
+    <button class="secondary-btn" id="meetingModalDeleteBtn" onclick="deleteMeetingModal()" style="border-color: rgba(193,91,69,0.4); color: var(--urgent);">Видалити нараду</button>
   </div>
 </div>
 
@@ -1243,7 +1243,7 @@
       Виконано
     </label>
     <button class="primary-btn" onclick="saveTaskModal()">Зберегти</button>
-    <button class="secondary-btn" id="taskModalDeleteBtn" onclick="deleteTaskModal()" style="border-color: rgba(209,101,94,0.4); color: var(--urgent);">Видалити задачу</button>
+    <button class="secondary-btn" id="taskModalDeleteBtn" onclick="deleteTaskModal()" style="border-color: rgba(193,91,69,0.4); color: var(--urgent);">Видалити задачу</button>
   </div>
 </div>
 
