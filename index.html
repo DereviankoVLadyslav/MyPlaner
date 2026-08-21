@@ -1158,6 +1158,18 @@
       <span class="tag repeat-tag tag-clickable tag-choice" id="meetingRepeatChoiceWeekly" onclick="setMeetingModalRepeat('weekly')">Щотижня</span>
       <span class="tag repeat-tag tag-clickable tag-choice" id="meetingRepeatChoiceMonthly" onclick="setMeetingModalRepeat('monthly')">Щомісяця</span>
     </div>
+    <div id="meetingRepeatDaysRow" class="hidden">
+      <label class="field-label" style="margin-top:14px;">Дні тижня</label>
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <span class="tag repeat-tag tag-clickable tag-choice" id="meetingRepeatDay1" onclick="toggleMeetingModalRepeatDay(1)">Пн</span>
+        <span class="tag repeat-tag tag-clickable tag-choice" id="meetingRepeatDay2" onclick="toggleMeetingModalRepeatDay(2)">Вт</span>
+        <span class="tag repeat-tag tag-clickable tag-choice" id="meetingRepeatDay3" onclick="toggleMeetingModalRepeatDay(3)">Ср</span>
+        <span class="tag repeat-tag tag-clickable tag-choice" id="meetingRepeatDay4" onclick="toggleMeetingModalRepeatDay(4)">Чт</span>
+        <span class="tag repeat-tag tag-clickable tag-choice" id="meetingRepeatDay5" onclick="toggleMeetingModalRepeatDay(5)">Пт</span>
+        <span class="tag repeat-tag tag-clickable tag-choice" id="meetingRepeatDay6" onclick="toggleMeetingModalRepeatDay(6)">Сб</span>
+        <span class="tag repeat-tag tag-clickable tag-choice" id="meetingRepeatDay0" onclick="toggleMeetingModalRepeatDay(0)">Нд</span>
+      </div>
+    </div>
     <label class="field-label" style="margin-top:14px;" for="meetingWithInput">З ким</label>
     <input type="text" id="meetingWithInput" placeholder="Учасники">
     <label class="field-label" style="margin-top:14px;" for="meetingDescInput">Опис</label>
@@ -1587,6 +1599,25 @@ function occurrencesForMeeting(m, rangeStart, rangeEnd) {
   if (!m.repeat || m.repeat === 'none') {
     return (baseDate >= rangeStart && baseDate <= rangeEnd) ? [baseDate] : [];
   }
+
+  // Weekly on specific weekdays (e.g. every Wed + Fri) — walk day by day
+  // instead of jumping in 7-day steps, and only keep days on the chosen
+  // weekday set. Falls through to the simple weekly step below when no
+  // specific days were picked, so older meetings keep behaving as before.
+  if (m.repeat === 'weekly' && Array.isArray(m.repeatDays) && m.repeatDays.length) {
+    const days = new Set(m.repeatDays);
+    const out = [];
+    const walkStart = baseDate > rangeStart ? baseDate : rangeStart;
+    let cur = new Date(walkStart); cur.setHours(0, 0, 0, 0);
+    let guard = 0;
+    while (cur <= rangeEnd && guard < 3000) {
+      if (cur >= baseDate && days.has(cur.getDay())) out.push(new Date(cur));
+      cur.setDate(cur.getDate() + 1);
+      guard++;
+    }
+    return out;
+  }
+
   const out = [];
   let cur = new Date(baseDate);
   let guard = 0;
@@ -2220,6 +2251,7 @@ function renderDayView() {
 // ─── MEETING MODAL (description + link on click) ──────────────────────
 let currentMeetingId = null;
 let meetingModalRepeat = 'none';
+let meetingModalRepeatDays = []; // weekly only — JS getDay() values (0=Нд...6=Сб)
 
 // Recurring-meeting occurrence chips on the calendar use a virtual id
 // "<masterId>::<occurrenceDateIso>" so a click can still resolve back to
@@ -2243,6 +2275,7 @@ function openMeetingModal(id, presetDate, presetTime) {
   document.getElementById('meetingWithInput').value = it ? (it.withWhom || '') : '';
   document.getElementById('meetingDescInput').value = it ? (it.description || '') : '';
   document.getElementById('meetingLinkInput').value = it ? (it.link || '') : '';
+  meetingModalRepeatDays = it && Array.isArray(it.repeatDays) ? it.repeatDays.slice() : [];
   setMeetingModalRepeat(it ? (it.repeat || 'none') : 'none');
 
   const delBtn = document.getElementById('meetingModalDeleteBtn');
@@ -2263,6 +2296,32 @@ function setMeetingModalRepeat(r) {
     const el = document.getElementById('meetingRepeatChoice' + label);
     if (el) el.classList.toggle('tag-active', key === r);
   });
+
+  const daysRow = document.getElementById('meetingRepeatDaysRow');
+  if (daysRow) daysRow.classList.toggle('hidden', r !== 'weekly');
+
+  // Switching to weekly with nothing picked yet — default to the
+  // meeting's own date so the picker starts matching current behavior
+  // (repeats on that one weekday) instead of looking like "no days".
+  if (r === 'weekly' && meetingModalRepeatDays.length === 0) {
+    const d = parseIso(document.getElementById('meetingDateInput').value.trim());
+    if (d) meetingModalRepeatDays = [d.getDay()];
+  }
+  renderMeetingRepeatDayPills();
+}
+
+function toggleMeetingModalRepeatDay(dow) {
+  const idx = meetingModalRepeatDays.indexOf(dow);
+  if (idx >= 0) meetingModalRepeatDays.splice(idx, 1);
+  else meetingModalRepeatDays.push(dow);
+  renderMeetingRepeatDayPills();
+}
+
+function renderMeetingRepeatDayPills() {
+  for (let dow = 0; dow < 7; dow++) {
+    const el = document.getElementById('meetingRepeatDay' + dow);
+    if (el) el.classList.toggle('tag-active', meetingModalRepeatDays.includes(dow));
+  }
 }
 
 function saveMeetingModal() {
@@ -2296,6 +2355,7 @@ function saveMeetingModal() {
   it.time = time;
   it.endTime = endTime;
   it.repeat = meetingModalRepeat;
+  it.repeatDays = meetingModalRepeat === 'weekly' ? meetingModalRepeatDays.slice().sort((a,b) => a - b) : [];
   it.withWhom = document.getElementById('meetingWithInput').value.trim();
   it.description = document.getElementById('meetingDescInput').value.trim();
   it.link = document.getElementById('meetingLinkInput').value.trim();
