@@ -2663,8 +2663,14 @@ let isListening = false;
 function initVoiceInput() {
   const micBtn = document.getElementById('micBtn');
   if (!SpeechRecognitionAPI) {
-    micBtn.disabled = true;
-    micBtn.title = 'Голосове введення не підтримується цим браузером (працює в Chrome/Edge)';
+    // Safari (both on iPad and Mac) never implemented browser-side speech
+    // *recognition* — only speech synthesis — so this button can't drive
+    // it there, on any browser you install on iPad (Chrome/Edge on iPadOS
+    // are all just Safari/WebKit underneath, so switching browsers won't
+    // help). Keep the button live rather than disabling it silently: a
+    // disabled button gives zero feedback on tap, which is exactly what
+    // reads as "broken" instead of "unsupported, use this instead".
+    micBtn.title = 'Голосове введення через браузер тут не підтримується — використай диктовку клавіатури';
     return;
   }
   speechRecognizer = new SpeechRecognitionAPI();
@@ -2716,7 +2722,13 @@ function stopVoiceInputUI() {
 }
 
 function toggleVoiceInput() {
-  if (!speechRecognizer) return;
+  if (!speechRecognizer) {
+    // No Web Speech API here (Safari/iPadOS — see initVoiceInput). Point
+    // the person at the keyboard's own dictation instead of doing nothing.
+    addMessage('ai', '🎤 Це голосове введення (браузерне) тут не працює — Safari та будь-який браузер на iPad (він теж на движку Safari) його не підтримують.<br><br>Натомість скористайся диктовкою самої клавіатури iPad: постав курсор у поле повідомлення і натисни мікрофон на клавіатурі (або тримай кнопку «переключення мови/emoji» внизу зліва, поки не з’явиться диктовка) — вона впише текст так само.');
+    document.getElementById('chatInput').focus();
+    return;
+  }
   if (isListening) {
     speechRecognizer.stop();
   } else {
