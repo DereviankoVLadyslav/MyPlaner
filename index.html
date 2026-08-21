@@ -12,9 +12,9 @@
     --surface: #fbfaf2;
     --surface2: #eef0df;
     --border: #d9ddc7;
-    --accent: #4f7a4a;
-    --accent2: #375a34;
-    --accent-glow: rgba(79,122,74,0.12);
+    --accent: #3e5f3a;
+    --accent2: #2c4629;
+    --accent-glow: rgba(62,95,58,0.12);
     --text: #1e2b19;
     --text-muted: #707d66;
     --text-dim: #33422e;
@@ -116,6 +116,16 @@
     transition: border-color 0.2s;
   }
   .modal-textarea:focus { border-color: var(--accent); }
+
+  .meeting-desc-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .meeting-desc-link-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: var(--accent-glow); color: var(--accent2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 4px 9px; font-size: 12px; text-decoration: none;
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .meeting-desc-link-chip:hover { background: var(--accent); color: #fff; }
 
   .primary-btn {
     width: 100%;
@@ -284,7 +294,7 @@
   /* CHECKIN */
   .checkin-card {
     background: var(--accent-glow);
-    border: 1px solid rgba(79,122,74,0.3);
+    border: 1px solid rgba(62,95,58,0.3);
     border-radius: 12px;
     padding: 16px;
   }
@@ -310,8 +320,8 @@
     margin-top: 12px;
     width: 100%;
     padding: 8px;
-    background: rgba(79,122,74,0.2);
-    border: 1px solid rgba(79,122,74,0.4);
+    background: rgba(62,95,58,0.2);
+    border: 1px solid rgba(62,95,58,0.4);
     border-radius: 8px;
     color: var(--accent);
     font-size: 12px;
@@ -321,7 +331,7 @@
     font-family: 'Inter', sans-serif;
   }
 
-  .checkin-btn:hover { background: rgba(79,122,74,0.3); }
+  .checkin-btn:hover { background: rgba(62,95,58,0.3); }
 
   /* STATS */
   .stats-row {
@@ -372,7 +382,7 @@
     position: relative;
   }
 
-  .task-item:hover { border-color: var(--accent); background: rgba(79,122,74,0.05); }
+  .task-item:hover { border-color: var(--accent); background: rgba(62,95,58,0.05); }
   .task-item.selected { border-color: var(--accent); background: var(--accent-glow); }
   .task-item.done-item { opacity: 0.5; }
 
@@ -428,7 +438,7 @@
 
   .tag.tag-clickable { cursor: pointer; transition: all 0.15s; }
   .tag.tag-clickable:hover { filter: brightness(1.25); transform: scale(1.04); }
-  .tag.repeat-tag { background: rgba(79,122,74,0.1); color: var(--accent); border: 1px solid rgba(79,122,74,0.3); }
+  .tag.repeat-tag { background: rgba(62,95,58,0.1); color: var(--accent); border: 1px solid rgba(62,95,58,0.3); }
 
   .drag-handle {
     color: var(--text-muted);
@@ -450,7 +460,7 @@
   .tag.p2 { background: rgba(185,138,61,0.15); color: var(--warning); border: 1px solid rgba(185,138,61,0.3); }
   .tag.p3 { background: rgba(79,138,146,0.15); color: var(--info); border: 1px solid rgba(79,138,146,0.3); }
   .tag.day-tag { background: var(--surface); color: var(--text-dim); border: 1px solid var(--border); }
-  .tag.from-tag { background: rgba(79,122,74,0.1); color: var(--accent); border: 1px solid rgba(79,122,74,0.2); }
+  .tag.from-tag { background: rgba(62,95,58,0.1); color: var(--accent); border: 1px solid rgba(62,95,58,0.2); }
 
   /* MINI CALENDAR (sidebar) */
   .mini-cal-header {
@@ -532,11 +542,10 @@
     position: absolute; left: 6px; right: 6px;
     background: var(--accent); color: #fff; border-radius: 7px; padding: 0 10px;
     font-size: 12px; overflow: hidden; cursor: pointer; pointer-events: auto;
-    box-shadow: 0 2px 8px rgba(79,122,74,0.3); transition: filter 0.15s;
+    box-shadow: 0 2px 8px rgba(62,95,58,0.3); transition: filter 0.15s;
     display: flex; align-items: center; gap: 6px;
   }
   .dayview-event:hover { filter: brightness(1.15); }
-  .dayview-event-time { font-weight: 600; font-size: 10.5px; opacity: 0.85; flex-shrink: 0; }
   .dayview-event-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
   /* CALENDAR VIEW TOGGLE (week/month) */
@@ -584,11 +593,10 @@
     position: absolute; left: 2px; right: 2px;
     background: var(--accent); color: #fff; border-radius: 5px; padding: 0 5px;
     font-size: 10px; overflow: hidden; cursor: pointer; pointer-events: auto;
-    box-shadow: 0 1px 4px rgba(79,122,74,0.3); transition: filter 0.15s;
+    box-shadow: 0 1px 4px rgba(62,95,58,0.3); transition: filter 0.15s;
     display: flex; align-items: center; gap: 4px;
   }
   .weekview-event:hover { filter: brightness(1.15); }
-  .weekview-event-time { font-weight: 600; opacity: 0.85; font-size: 9px; flex-shrink: 0; }
   .weekview-event-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 
   /* MAIN */
@@ -862,7 +870,7 @@
     font-size: 14px;
   }
 
-  .msg.ai .msg-avatar { background: var(--accent-glow); border: 1px solid rgba(79,122,74,0.3); }
+  .msg.ai .msg-avatar { background: var(--accent-glow); border: 1px solid rgba(62,95,58,0.3); }
   .msg.user .msg-avatar { background: var(--surface2); border: 1px solid var(--border); }
 
   .msg-bubble {
@@ -877,7 +885,7 @@
 
   .msg.user .msg-bubble {
     background: var(--accent-glow);
-    border-color: rgba(79,122,74,0.3);
+    border-color: rgba(62,95,58,0.3);
     color: var(--text);
   }
 
@@ -1175,9 +1183,11 @@
     <label class="field-label" style="margin-top:14px;" for="meetingWithInput">З ким</label>
     <input type="text" id="meetingWithInput" placeholder="Учасники">
     <label class="field-label" style="margin-top:14px;" for="meetingDescInput">Опис</label>
-    <textarea id="meetingDescInput" class="modal-textarea" placeholder="Порядок денний, нотатки..."></textarea>
+    <textarea id="meetingDescInput" class="modal-textarea" placeholder="Порядок денний, нотатки..." oninput="renderMeetingDescLinks()"></textarea>
+    <div id="meetingDescLinksRow" class="meeting-desc-links hidden"></div>
     <label class="field-label" style="margin-top:14px;" for="meetingLinkInput">Посилання на зустріч</label>
-    <input type="text" id="meetingLinkInput" placeholder="https://meet.google.com/...">
+    <input type="text" id="meetingLinkInput" placeholder="https://meet.google.com/..." oninput="renderMeetingLinkChip()">
+    <div id="meetingLinkChipRow" class="meeting-desc-links hidden"></div>
     <button class="primary-btn" onclick="saveMeetingModal()">Зберегти</button>
     <button class="secondary-btn" id="meetingModalDeleteBtn" onclick="deleteMeetingModal()" style="border-color: rgba(193,91,69,0.4); color: var(--urgent);">Видалити нараду</button>
   </div>
@@ -2065,12 +2075,11 @@ function renderWeekGrid() {
     }
 
     const dayMeetings = expanded.filter(it => it.type === 'meeting' && it.date === iso);
-    const eventsHtml = layoutTimedMeetings(dayMeetings, WEEKVIEW_ROW_H, 22).map(({ it, top, height }) => {
+    const eventsHtml = layoutTimedMeetings(dayMeetings, WEEKVIEW_ROW_H, 20).map(({ it, top, height }) => {
       const repeatMark = (it.repeat && it.repeat !== 'none') ? ' 🔁' : '';
-      const title = it.name + (it.withWhom ? ' — ' + it.withWhom : '') + (it.link ? ' 🔗' : '') + (it.description ? '\n' + it.description : '');
+      const title = timeRangeStr(it) + ' — ' + it.name + (it.withWhom ? ' — ' + it.withWhom : '') + (it.link ? ' 🔗' : '') + (it.description ? '\n' + it.description : '');
       return `<div class="weekview-event" style="top:${top}px; height:${height}px;" title="${escapeHtml(title)}" onclick="event.stopPropagation(); openMeetingModal('${it.id}')">
-        <span class="weekview-event-time">${escapeHtml(timeRangeStr(it))}${repeatMark}</span>
-        <span class="weekview-event-name">🤝 ${escapeHtml(it.name)}${it.link ? ' 🔗' : ''}</span>
+        <span class="weekview-event-name">🤝 ${escapeHtml(it.name)}${repeatMark}${it.link ? ' 🔗' : ''}</span>
       </div>`;
     }).join('');
 
@@ -2262,12 +2271,11 @@ function renderDayView() {
     </div>`;
   }
 
-  const eventsHtml = layoutTimedMeetings(dayMeetings, DAYVIEW_ROW_H, 26).map(({ it, top, height }) => {
+  const eventsHtml = layoutTimedMeetings(dayMeetings, DAYVIEW_ROW_H, 24).map(({ it, top, height }) => {
     const repeatMark = (it.repeat && it.repeat !== 'none') ? ' 🔁' : '';
-    const title = it.name + (it.withWhom ? ' — ' + it.withWhom : '') + (it.link ? ' 🔗' : '') + (it.description ? '\n' + it.description : '');
+    const title = timeRangeStr(it) + ' — ' + it.name + (it.withWhom ? ' — ' + it.withWhom : '') + (it.link ? ' 🔗' : '') + (it.description ? '\n' + it.description : '');
     return `<div class="dayview-event" style="top:${top}px; height:${height}px;" title="${escapeHtml(title)}" onclick="event.stopPropagation(); openMeetingModal('${it.id}')">
-      <div class="dayview-event-time">${escapeHtml(timeRangeStr(it))}${repeatMark}</div>
-      <div class="dayview-event-name">🤝 ${escapeHtml(it.name)}${it.link ? ' 🔗' : ''}</div>
+      <div class="dayview-event-name">🤝 ${escapeHtml(it.name)}${repeatMark}${it.link ? ' 🔗' : ''}</div>
     </div>`;
   }).join('');
 
@@ -2276,6 +2284,52 @@ function renderDayView() {
 }
 
 // ─── MEETING MODAL (description + link on click) ──────────────────────
+
+// Pulls out http(s) URLs from free text, trimming trailing punctuation that's
+// almost always just sentence formatting rather than part of the link
+// (a closing ")" is kept when the URL has an unmatched opening "(" — common
+// in wiki-style links).
+function extractUrls(text) {
+  if (!text) return [];
+  const matches = text.match(/https?:\/\/[^\s<>"']+/g) || [];
+  const cleaned = matches.map(u => {
+    while (u.length && /[.,;:!?)\]}'"]$/.test(u)) {
+      const last = u[u.length - 1];
+      if (last === ')' && (u.match(/\(/g) || []).length >= (u.match(/\)/g) || []).length) break;
+      u = u.slice(0, -1);
+    }
+    return u;
+  });
+  return cleaned.filter((u, i) => u && cleaned.indexOf(u) === i);
+}
+
+function linkChipsHtml(urls) {
+  return urls.map(u => {
+    const shown = u.length > 46 ? u.slice(0, 46) + '…' : u;
+    return `<a href="${escapeHtml(u)}" target="_blank" rel="noopener noreferrer" class="meeting-desc-link-chip" onclick="event.stopPropagation()">🔗 ${escapeHtml(shown)}</a>`;
+  }).join('');
+}
+
+// Renders any links typed into the meeting description as clickable chips
+// right below the textarea — the textarea itself is plain text and can't
+// host a clickable link, so this is the way to actually open them.
+function renderMeetingDescLinks() {
+  const row = document.getElementById('meetingDescLinksRow');
+  const urls = extractUrls(document.getElementById('meetingDescInput').value);
+  if (!urls.length) { row.classList.add('hidden'); row.innerHTML = ''; return; }
+  row.classList.remove('hidden');
+  row.innerHTML = linkChipsHtml(urls);
+}
+
+// Same idea for the dedicated "meeting link" field.
+function renderMeetingLinkChip() {
+  const row = document.getElementById('meetingLinkChipRow');
+  const urls = extractUrls(document.getElementById('meetingLinkInput').value);
+  if (!urls.length) { row.classList.add('hidden'); row.innerHTML = ''; return; }
+  row.classList.remove('hidden');
+  row.innerHTML = linkChipsHtml(urls);
+}
+
 let currentMeetingId = null;
 let meetingModalRepeat = 'none';
 let meetingModalRepeatDays = []; // weekly only — JS getDay() values (0=Нд...6=Сб)
@@ -2302,6 +2356,8 @@ function openMeetingModal(id, presetDate, presetTime) {
   document.getElementById('meetingWithInput').value = it ? (it.withWhom || '') : '';
   document.getElementById('meetingDescInput').value = it ? (it.description || '') : '';
   document.getElementById('meetingLinkInput').value = it ? (it.link || '') : '';
+  renderMeetingDescLinks();
+  renderMeetingLinkChip();
   meetingModalRepeatDays = it && Array.isArray(it.repeatDays) ? it.repeatDays.slice() : [];
   setMeetingModalRepeat(it ? (it.repeat || 'none') : 'none');
 
