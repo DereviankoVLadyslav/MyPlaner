@@ -518,7 +518,7 @@
   .dayview-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   .dayview-grid { position: relative; }
   .dayview-hour-row {
-    display: flex; height: 52px; border-top: 1px solid var(--border); cursor: pointer; transition: background 0.15s;
+    display: flex; height: 64px; border-top: 1px solid var(--border); cursor: pointer; transition: background 0.15s;
   }
   .dayview-hour-row:hover { background: var(--surface2); }
   .dayview-hour-row:first-child { border-top: none; }
@@ -568,14 +568,14 @@
   .weekview-grid { display: flex; }
   .weekview-hours-col { width: 44px; flex-shrink: 0; }
   .weekview-hour-label {
-    height: 48px; font-size: 10px; color: var(--text-muted); text-align: right;
+    height: 60px; font-size: 10px; color: var(--text-muted); text-align: right;
     padding: 3px 6px 0 0; box-sizing: border-box; border-top: 1px solid var(--border);
   }
   .weekview-hours-col .weekview-hour-label:first-child { border-top: none; }
   .weekview-days { display: flex; flex: 1; }
   .weekview-day-col { flex: 1; position: relative; border-left: 1px solid var(--border); }
   .weekview-day-col.today-col { background: var(--accent-glow); }
-  .weekview-hour-cell { height: 48px; border-top: 1px solid var(--border); cursor: pointer; transition: background 0.15s; }
+  .weekview-hour-cell { height: 60px; border-top: 1px solid var(--border); cursor: pointer; transition: background 0.15s; }
   .weekview-hour-cell:hover { background: var(--surface2); }
   .weekview-day-col .weekview-hour-cell:first-child { border-top: none; }
   .weekview-events-col { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; }
@@ -2006,7 +2006,7 @@ function renderMonthGrid() {
   document.getElementById('calGrid').innerHTML = html;
 }
 
-const WEEKVIEW_ROW_H = 48; // px per hour — must match .weekview-hour-cell/.weekview-hour-label height in CSS
+const WEEKVIEW_ROW_H = 60; // px per hour — must match .weekview-hour-cell/.weekview-hour-label height in CSS
 
 // The month name/year shown in the toolbar for week view is the month
 // that "owns" most of the visible week — using the week's Thursday
@@ -2063,12 +2063,10 @@ function renderWeekGrid() {
     }
 
     const dayMeetings = expanded.filter(it => it.type === 'meeting' && it.date === iso);
-    const eventsHtml = layoutTimedMeetings(dayMeetings, WEEKVIEW_ROW_H, 32).map(({ it, top, height, col, cols }) => {
-      const widthPct = 100 / cols;
-      const leftPct = col * widthPct;
+    const eventsHtml = layoutTimedMeetings(dayMeetings, WEEKVIEW_ROW_H, 34).map(({ it, top, height }) => {
       const repeatMark = (it.repeat && it.repeat !== 'none') ? ' 🔁' : '';
       const title = it.name + (it.withWhom ? ' — ' + it.withWhom : '') + (it.link ? ' 🔗' : '') + (it.description ? '\n' + it.description : '');
-      return `<div class="weekview-event" style="top:${top}px; height:${height}px; left:calc(${leftPct}% + 1px); width:calc(${widthPct}% - 2px);" title="${escapeHtml(title)}" onclick="event.stopPropagation(); openMeetingModal('${it.id}')">
+      return `<div class="weekview-event" style="top:${top}px; height:${height}px;" title="${escapeHtml(title)}" onclick="event.stopPropagation(); openMeetingModal('${it.id}')">
         <span class="weekview-event-time">${escapeHtml(timeRangeStr(it))}${repeatMark}</span>
         <span class="weekview-event-name">🤝 ${escapeHtml(it.name)}${it.link ? ' 🔗' : ''}</span>
       </div>`;
@@ -2154,7 +2152,7 @@ function renderMiniCalendar() {
 
 // ─── DAY VIEW (full-screen single day, hourly grid) ───────────────────
 let dayViewDate = null; // ISO date currently shown, or null when closed
-const DAYVIEW_ROW_H = 52; // px per hour
+const DAYVIEW_ROW_H = 64; // px per hour
 
 function openDayView(iso) {
   dayViewDate = iso;
@@ -2189,60 +2187,36 @@ function dayViewToMinutes(t) {
 
 // Lays overlapping/adjacent meetings side by side instead of stacking them
 // on top of each other (which hid every name but the last one drawn).
-// Clustering is done on the actual RENDERED pixel rectangles (top/bottom,
-// after the per-view minimum block height is applied) rather than on raw
-// start/end minutes — a pair of short back-to-back meetings (e.g. 08:00–08:20
-// and 08:20–08:40) don't overlap in time, but once each is stretched up to
-// the view's minimum block height they visually collide, so they still need
-// side-by-side columns. rowH is pixels-per-hour for the view, minHeight is
-// that view's minimum block height in px.
-// Returns only meetings with a parseable time, each annotated with
-// startMin/endMin/top/height/col/cols for positioning.
+// Full-width vertical stacking, in start-time order. A meeting's natural
+// top/height comes from its time, with a per-view minimum block height
+// applied so short meetings still fit their text. When that would make it
+// collide with the previous (already-placed) meeting — e.g. two short
+// back-to-back meetings like 08:00–08:20 and 08:20–08:40 — its top is
+// pushed down to start right after the previous block ends, so blocks
+// always render one under another instead of on top of each other.
+// rowH is pixels-per-hour for the view, minHeight is that view's minimum
+// block height in px. Returns only meetings with a parseable time, each
+// annotated with startMin/endMin/top/height for positioning.
 function layoutTimedMeetings(meetings, rowH, minHeight) {
   const timed = meetings.map(it => {
     const startMin = dayViewToMinutes(it.time);
     if (startMin === null) return null;
     let endMin = dayViewToMinutes(it.endTime);
     if (endMin === null || endMin <= startMin) endMin = startMin + 30;
-    const top = (startMin / 60) * rowH;
-    const height = Math.max(((endMin - startMin) / 60) * rowH - 2, minHeight);
-    return { it, startMin, endMin, top, height, bottom: top + height };
+    return { it, startMin, endMin };
   }).filter(Boolean);
 
-  timed.sort((a, b) => a.top - b.top || a.bottom - b.bottom);
+  timed.sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
 
-  let cluster = [];
-  let clusterBottom = -Infinity;
-  const clusters = [];
+  let prevBottom = -Infinity;
+  const gap = 2; // small breathing room between cascaded blocks, in px
   timed.forEach(ev => {
-    if (cluster.length && ev.top >= clusterBottom) {
-      clusters.push(cluster);
-      cluster = [];
-      clusterBottom = -Infinity;
-    }
-    cluster.push(ev);
-    clusterBottom = Math.max(clusterBottom, ev.bottom);
-  });
-  if (cluster.length) clusters.push(cluster);
-
-  clusters.forEach(c => {
-    const columnEnds = []; // last bottom (px) occupied in each column
-    c.forEach(ev => {
-      let placed = false;
-      for (let col = 0; col < columnEnds.length; col++) {
-        if (ev.top >= columnEnds[col]) {
-          columnEnds[col] = ev.bottom;
-          ev.col = col;
-          placed = true;
-          break;
-        }
-      }
-      if (!placed) {
-        columnEnds.push(ev.bottom);
-        ev.col = columnEnds.length - 1;
-      }
-    });
-    c.forEach(ev => { ev.cols = columnEnds.length; });
+    const naturalTop = (ev.startMin / 60) * rowH;
+    const height = Math.max(((ev.endMin - ev.startMin) / 60) * rowH - 2, minHeight);
+    const top = Math.max(naturalTop, prevBottom);
+    ev.top = top;
+    ev.height = height;
+    prevBottom = top + height + gap;
   });
 
   return timed;
@@ -2286,12 +2260,10 @@ function renderDayView() {
     </div>`;
   }
 
-  const eventsHtml = layoutTimedMeetings(dayMeetings, DAYVIEW_ROW_H, 38).map(({ it, top, height, col, cols }) => {
-    const widthPct = 100 / cols;
-    const leftPct = col * widthPct;
+  const eventsHtml = layoutTimedMeetings(dayMeetings, DAYVIEW_ROW_H, 38).map(({ it, top, height }) => {
     const repeatMark = (it.repeat && it.repeat !== 'none') ? ' 🔁' : '';
     const title = it.name + (it.withWhom ? ' — ' + it.withWhom : '') + (it.link ? ' 🔗' : '') + (it.description ? '\n' + it.description : '');
-    return `<div class="dayview-event" style="top:${top}px; height:${height}px; left:calc(${leftPct}% + 2px); width:calc(${widthPct}% - 4px);" title="${escapeHtml(title)}" onclick="event.stopPropagation(); openMeetingModal('${it.id}')">
+    return `<div class="dayview-event" style="top:${top}px; height:${height}px;" title="${escapeHtml(title)}" onclick="event.stopPropagation(); openMeetingModal('${it.id}')">
       <div class="dayview-event-time">${escapeHtml(timeRangeStr(it))}${repeatMark}</div>
       <div class="dayview-event-name">🤝 ${escapeHtml(it.name)}${it.link ? ' 🔗' : ''}</div>
     </div>`;
