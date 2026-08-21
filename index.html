@@ -2657,30 +2657,33 @@ function autoResize(el) {
 
 // ─── VOICE INPUT (Web Speech API — built into the browser, no key needed) ──
 const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-let speechRecognizer = null;
+let speechRecognizer = null; // created lazily — see buildSpeechRecognizer()
 let isListening = false;
 
 function initVoiceInput() {
-  const micBtn = document.getElementById('micBtn');
+  // Deliberately does NOT construct a SpeechRecognition instance here.
+  // Some browsers (Safari/iPadOS included) pop the "Would like to access
+  // the microphone" permission prompt as soon as one is *constructed* —
+  // not only when .start() is called — so building it eagerly at page
+  // load meant every single visit asked for mic permission, even for
+  // people who never touch the mic button. The recognizer is now built
+  // once, lazily, on the first actual tap (see toggleVoiceInput below).
   if (!SpeechRecognitionAPI) {
-    // Safari (both on iPad and Mac) never implemented browser-side speech
-    // *recognition* — only speech synthesis — so this button can't drive
-    // it there, on any browser you install on iPad (Chrome/Edge on iPadOS
-    // are all just Safari/WebKit underneath, so switching browsers won't
-    // help). Keep the button live rather than disabling it silently: a
-    // disabled button gives zero feedback on tap, which is exactly what
-    // reads as "broken" instead of "unsupported, use this instead".
+    const micBtn = document.getElementById('micBtn');
     micBtn.title = 'Голосове введення через браузер тут не підтримується — використай диктовку клавіатури';
-    return;
   }
-  speechRecognizer = new SpeechRecognitionAPI();
-  speechRecognizer.lang = 'uk-UA';
-  speechRecognizer.continuous = true;
-  speechRecognizer.interimResults = true;
+}
+
+function buildSpeechRecognizer() {
+  const micBtn = document.getElementById('micBtn');
+  const recognizer = new SpeechRecognitionAPI();
+  recognizer.lang = 'uk-UA';
+  recognizer.continuous = true;
+  recognizer.interimResults = true;
 
   let finalTranscript = '';
 
-  speechRecognizer.onstart = () => {
+  recognizer.onstart = () => {
     finalTranscript = document.getElementById('chatInput').value;
     if (finalTranscript) finalTranscript += ' ';
     isListening = true;
@@ -2688,7 +2691,7 @@ function initVoiceInput() {
     micBtn.textContent = '⏹️';
   };
 
-  speechRecognizer.onresult = (e) => {
+  recognizer.onresult = (e) => {
     let interim = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const transcript = e.results[i][0].transcript;
@@ -2700,7 +2703,7 @@ function initVoiceInput() {
     autoResize(input);
   };
 
-  speechRecognizer.onerror = (e) => {
+  recognizer.onerror = (e) => {
     stopVoiceInputUI();
     if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
       addMessage('ai', 'Немає доступу до мікрофона. Дозволь доступ у налаштуваннях браузера й спробуй ще раз.');
@@ -2709,9 +2712,11 @@ function initVoiceInput() {
     }
   };
 
-  speechRecognizer.onend = () => {
+  recognizer.onend = () => {
     stopVoiceInputUI();
   };
+
+  return recognizer;
 }
 
 function stopVoiceInputUI() {
@@ -2722,13 +2727,14 @@ function stopVoiceInputUI() {
 }
 
 function toggleVoiceInput() {
-  if (!speechRecognizer) {
-    // No Web Speech API here (Safari/iPadOS — see initVoiceInput). Point
-    // the person at the keyboard's own dictation instead of doing nothing.
-    addMessage('ai', '🎤 Це голосове введення (браузерне) тут не працює — Safari та будь-який браузер на iPad (він теж на движку Safari) його не підтримують.<br><br>Натомість скористайся диктовкою самої клавіатури iPad: постав курсор у поле повідомлення і натисни мікрофон на клавіатурі (або тримай кнопку «переключення мови/emoji» внизу зліва, поки не з’явиться диктовка) — вона впише текст так само.');
+  if (!SpeechRecognitionAPI) {
+    // Truly unsupported browser — point the person at the keyboard's own
+    // dictation instead of doing nothing.
+    addMessage('ai', '🎤 Це голосове введення (браузерне) тут не працює. Натомість скористайся вбудованою диктовкою клавіатури: постав курсор у поле повідомлення і натисни мікрофон на клавіатурі (або тримай кнопку «переключення мови/emoji» внизу зліва, поки не з’явиться диктовка) — вона впише текст так само.');
     document.getElementById('chatInput').focus();
     return;
   }
+  if (!speechRecognizer) speechRecognizer = buildSpeechRecognizer();
   if (isListening) {
     speechRecognizer.stop();
   } else {
