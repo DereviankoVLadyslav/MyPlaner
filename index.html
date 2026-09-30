@@ -820,7 +820,14 @@
   }
 
   /* MATRIX (Eisenhower matrix — 3rd tab) */
-  .matrix-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  #view-matrix {
+    /* Lays its children out as a column that fills the whole pane, so the
+       grid below can flex:1 and actually stretch to the page instead of
+       just being as tall as its content (a handful of task cards). */
+    display: flex;
+    flex-direction: column;
+  }
+  .matrix-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-shrink: 0; }
   .matrix-title { font-size: 16px; font-weight: 600; color: var(--text); }
 
   .matrix-unassigned-box {
@@ -829,6 +836,7 @@
     border-radius: 12px;
     padding: 14px 16px;
     margin-bottom: 20px;
+    flex-shrink: 0;
   }
 
   .matrix-pool {
@@ -853,6 +861,11 @@
     grid-template-columns: 64px 1fr 1fr;
     grid-template-rows: auto 1fr 1fr;
     gap: 10px;
+    /* Stretches to fill whatever's left of the page under the toolbar and
+       unassigned-tasks box (see #view-matrix above), so the four quadrants
+       grow to fill the page instead of sitting top-left as small boxes. */
+    flex: 1;
+    min-height: 0;
   }
 
   .matrix-axis-label {
@@ -885,8 +898,9 @@
     flex-direction: column;
     gap: 6px;
     border-radius: 8px;
-    min-height: 60px;
+    min-height: 0;
     padding: 2px;
+    overflow-y: auto;
     transition: background 0.15s, box-shadow 0.15s;
   }
   .matrix-quad-list:empty::after {
@@ -949,6 +963,7 @@
     .matrix-grid {
       grid-template-columns: 1fr;
       grid-template-rows: auto;
+      flex: none;
     }
     .matrix-row-i, .matrix-row-ni, .matrix-col-u, .matrix-col-nu, .matrix-corner { display: none; }
   }
