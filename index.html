@@ -931,7 +931,8 @@
     gap: 7px;
     font-size: 12.5px;
     color: var(--text);
-    cursor: pointer;
+    cursor: grab;
+    touch-action: none;
     transition: border-color 0.15s;
   }
   .matrix-card:hover { border-color: var(--accent); }
@@ -942,7 +943,6 @@
   .matrix-card-handle {
     cursor: grab;
     color: var(--text-muted);
-    touch-action: none;
     padding: 0 2px;
     line-height: 1;
     flex-shrink: 0;
@@ -2064,11 +2064,18 @@ function renderMatrixView() {
     const q = MATRIX_QUADRANTS.includes(t.matrixQuadrant) ? t.matrixQuadrant : '';
     buckets[q].push(t);
   });
+  // Manual drag order within each bucket wins (own field, separate from the
+  // sidebar's `order` — reordering on the matrix never reshuffles the sidebar).
+  Object.keys(buckets).forEach(q => {
+    buckets[q].sort((a, b) => (a.matrixOrder ?? NO_ORDER) - (b.matrixOrder ?? NO_ORDER));
+  });
 
   function cardHtml(t) {
     const pClass = 'p' + (t.priority || 3);
-    return `<div class="matrix-card ${pClass}" data-id="${t.id}" onclick="openTaskModal('${t.id}')">
-      <span class="matrix-card-handle" onpointerdown="event.stopPropagation(); matrixDragStart(event,'${t.id}')" onclick="event.stopPropagation()" title="Перетягни щоб перемістити">⋮⋮</span>
+    // The whole card is grabbable (not just the ⋮⋮ handle) — a tap that
+    // never crosses the drag threshold opens the task instead, see matrixDragEnd.
+    return `<div class="matrix-card ${pClass}" data-id="${t.id}" onpointerdown="matrixDragStart(event,'${t.id}')">
+      <span class="matrix-card-handle" title="Перетягни щоб перемістити">⋮⋮</span>
       <span class="matrix-card-name">${escapeHtml(t.name)}</span>
     </div>`;
   }
@@ -2077,71 +2084,125 @@ function renderMatrixView() {
   MATRIX_QUADRANTS.forEach(q => { lists[q].innerHTML = buckets[q].map(cardHtml).join(''); });
 }
 
-// Drag a task card between the pool and a quadrant (or quadrant-to-quadrant)
-// with pointer events — the same mouse+touch-unified approach as the
-// sidebar's taskDragStart above, since HTML5 drag-and-drop is unreliable on
-// iPad. A floating ghost follows the pointer while the real card stays put
-// (dimmed) until drop, when the nearest .matrix-dropzone under the pointer
-// decides the task's new matrixQuadrant.
+// Drag a task card between the pool and a quadrant (or quadrant-to-quadrant),
+// AND reorder cards within the same list — with pointer events, the same
+// mouse+touch-unified approach as the sidebar's taskDragStart above, since
+// HTML5 drag-and-drop is unreliable on iPad.
+//
+// The whole card is grabbable (name included, not just the ⋮⋮ handle), so a
+// pointerdown here doesn't yet know if it's a tap (open the task) or a drag.
+// It only "activates" into a drag once the pointer has moved past a small
+// threshold; a release before that is treated as a click and opens the task.
+// Once activated, a floating ghost follows the pointer for visual feedback
+// while the REAL card is live-moved among its siblings (in whichever
+// .matrix-dropzone the pointer is currently over) exactly like the sidebar's
+// taskDragMove — so dragging over a list previews where the card will land,
+// including moving it up/down within its own list. On drop, the card's final
+// DOM position (and parent zone) is read back to decide matrixQuadrant plus
+// a per-bucket matrixOrder — a field of its own, so matrix reordering never
+// touches the sidebar's separate task order.
 let matrixDragState = null;
+const MATRIX_DRAG_THRESHOLD = 6;
 
 function matrixDragStart(e, id) {
   e.preventDefault();
   const card = document.querySelector(`.matrix-card[data-id="${id}"]`);
   if (!card) return;
-  const rect = card.getBoundingClientRect();
+  matrixDragState = {
+    id, card,
+    startX: e.clientX, startY: e.clientY,
+    activated: false,
+    ghost: null, offsetX: 0, offsetY: 0
+  };
+  document.addEventListener('pointermove', matrixDragMove);
+  document.addEventListener('pointerup', matrixDragEnd);
+  document.addEventListener('pointercancel', matrixDragEnd);
+}
 
-  const ghost = card.cloneNode(true);
+function matrixActivateDrag(e) {
+  const st = matrixDragState;
+  const rect = st.card.getBoundingClientRect();
+  const ghost = st.card.cloneNode(true);
   ghost.classList.add('matrix-card-ghost');
   ghost.style.width = rect.width + 'px';
   ghost.style.left = rect.left + 'px';
   ghost.style.top = rect.top + 'px';
   document.body.appendChild(ghost);
 
-  matrixDragState = { id, offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top, ghost };
-  card.classList.add('dragging-source');
-
-  document.addEventListener('pointermove', matrixDragMove);
-  document.addEventListener('pointerup', matrixDragEnd);
-  document.addEventListener('pointercancel', matrixDragEnd);
+  st.ghost = ghost;
+  st.offsetX = e.clientX - rect.left;
+  st.offsetY = e.clientY - rect.top;
+  st.activated = true;
+  st.card.classList.add('dragging-source');
 }
 
 function matrixDragMove(e) {
-  if (!matrixDragState) return;
-  const { ghost, offsetX, offsetY } = matrixDragState;
-  ghost.style.left = (e.clientX - offsetX) + 'px';
-  ghost.style.top = (e.clientY - offsetY) + 'px';
+  const st = matrixDragState;
+  if (!st) return;
+
+  if (!st.activated) {
+    const dx = e.clientX - st.startX, dy = e.clientY - st.startY;
+    if (Math.hypot(dx, dy) < MATRIX_DRAG_THRESHOLD) return;
+    matrixActivateDrag(e);
+  }
+
+  st.ghost.style.left = (e.clientX - st.offsetX) + 'px';
+  st.ghost.style.top = (e.clientY - st.offsetY) + 'px';
 
   document.querySelectorAll('.matrix-dropzone.drop-hover').forEach(z => z.classList.remove('drop-hover'));
   const under = document.elementFromPoint(e.clientX, e.clientY);
   const zone = under && under.closest('.matrix-dropzone');
-  if (zone) zone.classList.add('drop-hover');
+  if (!zone) return;
+  zone.classList.add('drop-hover');
+
+  // Preview the drop position: insert the real (dimmed) card among the
+  // zone's other cards based on pointer Y — this is what makes reordering
+  // within the same list ("вище/нижче") work, not just moving between zones.
+  const siblings = [...zone.querySelectorAll('.matrix-card')].filter(el => el !== st.card);
+  let nextSibling = null;
+  for (const sib of siblings) {
+    const r = sib.getBoundingClientRect();
+    if (e.clientY < r.top + r.height / 2) { nextSibling = sib; break; }
+  }
+  if (nextSibling) zone.insertBefore(st.card, nextSibling);
+  else zone.appendChild(st.card);
 }
 
 function matrixDragEnd(e) {
-  if (!matrixDragState) return;
-  const { id, ghost } = matrixDragState;
+  const st = matrixDragState;
+  if (!st) return;
   document.removeEventListener('pointermove', matrixDragMove);
   document.removeEventListener('pointerup', matrixDragEnd);
   document.removeEventListener('pointercancel', matrixDragEnd);
-
-  ghost.remove();
-  document.querySelectorAll('.matrix-dropzone.drop-hover').forEach(z => z.classList.remove('drop-hover'));
-  const sourceCard = document.querySelector(`.matrix-card[data-id="${id}"]`);
-  if (sourceCard) sourceCard.classList.remove('dragging-source');
-
-  const under = document.elementFromPoint(e.clientX, e.clientY);
-  const zone = under && under.closest('.matrix-dropzone');
   matrixDragState = null;
-  if (!zone) return;
+
+  if (!st.activated) {
+    // Never crossed the drag threshold — this was a tap, open the task.
+    openTaskModal(st.id);
+    return;
+  }
+
+  st.ghost.remove();
+  st.card.classList.remove('dragging-source');
+  document.querySelectorAll('.matrix-dropzone.drop-hover').forEach(z => z.classList.remove('drop-hover'));
+
+  const zone = st.card.closest('.matrix-dropzone');
+  if (!zone) { renderMatrixView(); return; }
 
   const quadrant = zone.dataset.quadrant || '';
-  const it = items.find(i => i.id === id);
+  const it = items.find(i => i.id === st.id);
   if (it && it.type !== 'meeting') {
     it.matrixQuadrant = quadrant || null;
-    saveItems();
-    renderMatrixView();
   }
+
+  // Persist the on-screen order within this bucket only.
+  [...zone.querySelectorAll('.matrix-card')].forEach((el, idx) => {
+    const t = items.find(i => i.id === el.dataset.id);
+    if (t) t.matrixOrder = idx;
+  });
+
+  saveItems();
+  renderMatrixView();
 }
 
 function cyclePriority(id) {
