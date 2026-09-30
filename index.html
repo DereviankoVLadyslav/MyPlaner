@@ -1742,7 +1742,10 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).classList.add('active');
   document.getElementById('view-chat').style.display = tab === 'chat' ? 'flex' : 'none';
   document.getElementById('view-calendar').classList.toggle('hidden', tab !== 'calendar');
-  if (tab === 'calendar') renderCalendar();
+  if (tab === 'calendar') {
+    renderCalendar();
+    scrollWeekViewToDefaultHour();
+  }
 }
 
 // ─── STATS ────────────────────────────────────────────
@@ -1909,6 +1912,35 @@ function calSetViewMode(mode) {
   localStorage.setItem('planner_cal_view', mode);
   applyCalViewModeToDom();
   renderCalendar();
+  scrollWeekViewToDefaultHour();
+}
+
+// The week grid's hourly rows sit inside the same scrollable pane as the
+// toolbar and day headers above them (unlike the day-view overlay, which
+// has a separate fixed header) — so on a short screen the pane opens
+// scrolled to 00:00, and 00:00–06:00 is almost always empty, meaning the
+// person has to scroll past dead space just to see today's first meeting.
+// This scrolls straight to CAL_DEFAULT_SCROLL_HOUR instead. It measures the
+// real position of that hour's label rather than assuming a fixed offset,
+// since the space above the grid (toolbar, day headers, all-day task chips)
+// varies with content.
+const CAL_DEFAULT_SCROLL_HOUR = 6;
+function scrollWeekViewToDefaultHour() {
+  if (calendarViewMode !== 'week') return;
+  const pane = document.getElementById('view-calendar');
+  const hoursCol = document.getElementById('weekViewHours');
+  if (!pane || !hoursCol) return;
+  // Runs a frame later: the pane may have just been un-hidden (display:none
+  // → visible), and it has no real layout/scroll extent until the browser
+  // paints that change.
+  requestAnimationFrame(() => {
+    const label = hoursCol.children[CAL_DEFAULT_SCROLL_HOUR];
+    if (!label) return;
+    const paneRect = pane.getBoundingClientRect();
+    const labelRect = label.getBoundingClientRect();
+    const offset = (labelRect.top - paneRect.top) + pane.scrollTop;
+    pane.scrollTop = Math.max(offset - 12, 0);
+  });
 }
 
 function applyCalViewModeToDom() {
@@ -1933,6 +1965,7 @@ function calGoToday() {
   calendarMonth = startOfMonth(new Date());
   weekViewStart = startOfWeek(new Date());
   renderCalendar();
+  scrollWeekViewToDefaultHour();
 }
 
 function onCalShowTasksChange() {
