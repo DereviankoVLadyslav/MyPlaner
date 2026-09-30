@@ -819,6 +819,140 @@
     padding: 20px 10px;
   }
 
+  /* MATRIX (Eisenhower matrix — 3rd tab) */
+  .matrix-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .matrix-title { font-size: 16px; font-weight: 600; color: var(--text); }
+
+  .matrix-unassigned-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+
+  .matrix-pool {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 44px;
+    border-radius: 8px;
+    padding: 4px;
+    transition: background 0.15s, box-shadow 0.15s;
+  }
+  .matrix-pool:empty::after,
+  .matrix-pool.is-empty::after {
+    content: 'Немає нерозподілених задач';
+    font-size: 11.5px;
+    color: var(--text-muted);
+    padding: 4px;
+  }
+
+  .matrix-grid {
+    display: grid;
+    grid-template-columns: 64px 1fr 1fr;
+    grid-template-rows: auto 1fr 1fr;
+    gap: 10px;
+  }
+
+  .matrix-axis-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-dim);
+  }
+  .matrix-col-u, .matrix-col-nu { padding-bottom: 4px; align-items: flex-end; }
+  .matrix-row-i, .matrix-row-ni {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+
+  .matrix-quad {
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    min-height: 170px;
+  }
+  .matrix-quad-head { font-size: 13.5px; font-weight: 700; color: var(--text); }
+  .matrix-quad-sub { font-size: 10.5px; color: var(--text-dim); opacity: 0.75; margin-bottom: 10px; margin-top: 1px; }
+  .matrix-quad-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-radius: 8px;
+    min-height: 60px;
+    padding: 2px;
+    transition: background 0.15s, box-shadow 0.15s;
+  }
+  .matrix-quad-list:empty::after {
+    content: 'Порожньо — перетягни сюди задачу';
+    font-size: 11px;
+    color: var(--text-dim);
+    opacity: 0.55;
+    padding: 4px;
+  }
+
+  .matrix-quad-do { background: rgba(63,157,107,0.15); }
+  .matrix-quad-schedule { background: rgba(185,138,61,0.15); }
+  .matrix-quad-delegate { background: rgba(139,94,131,0.15); }
+  .matrix-quad-delete { background: rgba(193,91,69,0.15); }
+
+  .matrix-dropzone.drop-hover {
+    background: rgba(62,95,58,0.18);
+    box-shadow: 0 0 0 2px var(--accent) inset;
+  }
+
+  .matrix-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 9px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .matrix-card:hover { border-color: var(--accent); }
+  .matrix-card.dragging-source { opacity: 0.35; }
+  .matrix-card.p1 { border-left: 3px solid var(--urgent); }
+  .matrix-card.p2 { border-left: 3px solid var(--warning); }
+  .matrix-card.p3 { border-left: 3px solid var(--info); }
+  .matrix-card-handle {
+    cursor: grab;
+    color: var(--text-muted);
+    touch-action: none;
+    padding: 0 2px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .matrix-card-handle:hover { color: var(--text-dim); }
+  .matrix-card-name { flex: 1; line-height: 1.35; }
+
+  .matrix-card-ghost {
+    position: fixed;
+    z-index: 2000;
+    pointer-events: none;
+    opacity: 0.92;
+    box-shadow: 0 8px 24px rgba(24,48,20,0.25);
+    transform: scale(1.03);
+  }
+
+  @media (max-width: 900px) {
+    .matrix-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto;
+    }
+    .matrix-row-i, .matrix-row-ni, .matrix-col-u, .matrix-col-nu, .matrix-corner { display: none; }
+  }
+
   /* TASK CATEGORY (strategic vs operational) */
   .task-item.cat-strategic { border-left: 3px solid var(--cat-strategic); }
   .task-item.cat-operational { border-left: 3px solid var(--cat-operational); }
@@ -1334,6 +1468,7 @@
     <div class="tabs">
       <div class="tab active" onclick="switchTab('chat')" id="tab-chat">💬 Чат з AI</div>
       <div class="tab" onclick="switchTab('calendar')" id="tab-calendar">📅 Календар</div>
+      <div class="tab" onclick="switchTab('matrix')" id="tab-matrix">🎯 Матриця</div>
     </div>
 
     <!-- CHAT TAB -->
@@ -1414,6 +1549,48 @@
       <div class="unscheduled-box">
         <div class="unscheduled-title">🗒️ Задачі без дати</div>
         <div class="unscheduled-list" id="unscheduledList"></div>
+      </div>
+    </div>
+
+    <!-- MATRIX TAB (Eisenhower matrix — drag tasks into a quadrant) -->
+    <div id="view-matrix" class="hidden content">
+      <div class="matrix-toolbar">
+        <div class="matrix-title">🎯 Матриця Ейзенхауера</div>
+      </div>
+
+      <div class="matrix-unassigned-box">
+        <div class="unscheduled-title">🗂️ Нерозподілені задачі — перетягни у потрібний квадрант</div>
+        <div class="matrix-pool matrix-dropzone" id="matrixPoolList" data-quadrant=""></div>
+      </div>
+
+      <div class="matrix-grid">
+        <div class="matrix-corner"></div>
+        <div class="matrix-axis-label matrix-col-u">Терміново</div>
+        <div class="matrix-axis-label matrix-col-nu">Не терміново</div>
+
+        <div class="matrix-axis-label matrix-row-i">Важливо</div>
+        <div class="matrix-quad matrix-quad-do">
+          <div class="matrix-quad-head">✅ Зробити</div>
+          <div class="matrix-quad-sub">Терміново · Важливо</div>
+          <div class="matrix-quad-list matrix-dropzone" id="matrixListDo" data-quadrant="do"></div>
+        </div>
+        <div class="matrix-quad matrix-quad-schedule">
+          <div class="matrix-quad-head">🗓️ Відкласти</div>
+          <div class="matrix-quad-sub">Не терміново · Важливо</div>
+          <div class="matrix-quad-list matrix-dropzone" id="matrixListSchedule" data-quadrant="schedule"></div>
+        </div>
+
+        <div class="matrix-axis-label matrix-row-ni">Не важливо</div>
+        <div class="matrix-quad matrix-quad-delegate">
+          <div class="matrix-quad-head">🤝 Делегувати</div>
+          <div class="matrix-quad-sub">Терміново · Не важливо</div>
+          <div class="matrix-quad-list matrix-dropzone" id="matrixListDelegate" data-quadrant="delegate"></div>
+        </div>
+        <div class="matrix-quad matrix-quad-delete">
+          <div class="matrix-quad-head">🗑️ Видалити</div>
+          <div class="matrix-quad-sub">Не терміново · Не важливо</div>
+          <div class="matrix-quad-list matrix-dropzone" id="matrixListDelete" data-quadrant="delete"></div>
+        </div>
       </div>
     </div>
 
@@ -1742,10 +1919,12 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab).classList.add('active');
   document.getElementById('view-chat').style.display = tab === 'chat' ? 'flex' : 'none';
   document.getElementById('view-calendar').classList.toggle('hidden', tab !== 'calendar');
+  document.getElementById('view-matrix').classList.toggle('hidden', tab !== 'matrix');
   if (tab === 'calendar') {
     renderCalendar();
     scrollWeekViewToDefaultHour();
   }
+  if (tab === 'matrix') renderMatrixView();
 }
 
 // ─── STATS ────────────────────────────────────────────
@@ -1767,6 +1946,7 @@ function renderTaskList() {
   const list = tasksOnly();
   if (list.length === 0) {
     el.innerHTML = `<div class="empty-state" style="padding:30px 16px;"><div class="icon">📋</div><p>Задач поки немає.<br>Напиши в чат щоб додати.</p></div>`;
+    renderMatrixView();
     return;
   }
 
@@ -1794,6 +1974,8 @@ function renderTaskList() {
       <div class="task-meta">${pTag}${catTag}${dateTag}${fromTag}</div>
     </div>`;
   }).join('');
+
+  renderMatrixView();
 }
 
 // ─── DRAG TO REORDER (pointer events — works for mouse & touch) ───────
@@ -1839,6 +2021,112 @@ function taskDragEnd() {
   });
   dragState = null;
   saveItems();
+}
+
+// ─── MATRIX TAB (Eisenhower matrix) ────────────────────────────────────
+// Each task carries an independent `matrixQuadrant` field: '' /
+// undefined = unassigned (shown in the pool above the grid), or one of
+// 'do' | 'schedule' | 'delegate' | 'delete'. This is separate from the
+// task's regular priority/category — a task can have any priority and
+// still be unplaced on the matrix.
+const MATRIX_QUADRANTS = ['do', 'schedule', 'delegate', 'delete'];
+
+// Called from renderTaskList() so the matrix always reflects the current
+// task set, whether or not its tab happens to be the visible one right
+// now (its DOM nodes exist either way, just hidden via .hidden on the tab).
+function renderMatrixView() {
+  const pool = document.getElementById('matrixPoolList');
+  if (!pool) return; // markup not present yet (shouldn't happen, but be safe)
+  const lists = {
+    do: document.getElementById('matrixListDo'),
+    schedule: document.getElementById('matrixListSchedule'),
+    delegate: document.getElementById('matrixListDelegate'),
+    delete: document.getElementById('matrixListDelete')
+  };
+
+  const buckets = { '': [], do: [], schedule: [], delegate: [], delete: [] };
+  tasksOnly().filter(t => !t.done).forEach(t => {
+    const q = MATRIX_QUADRANTS.includes(t.matrixQuadrant) ? t.matrixQuadrant : '';
+    buckets[q].push(t);
+  });
+
+  function cardHtml(t) {
+    const pClass = 'p' + (t.priority || 3);
+    return `<div class="matrix-card ${pClass}" data-id="${t.id}" onclick="openTaskModal('${t.id}')">
+      <span class="matrix-card-handle" onpointerdown="event.stopPropagation(); matrixDragStart(event,'${t.id}')" onclick="event.stopPropagation()" title="Перетягни щоб перемістити">⋮⋮</span>
+      <span class="matrix-card-name">${escapeHtml(t.name)}</span>
+    </div>`;
+  }
+
+  pool.innerHTML = buckets[''].map(cardHtml).join('');
+  MATRIX_QUADRANTS.forEach(q => { lists[q].innerHTML = buckets[q].map(cardHtml).join(''); });
+}
+
+// Drag a task card between the pool and a quadrant (or quadrant-to-quadrant)
+// with pointer events — the same mouse+touch-unified approach as the
+// sidebar's taskDragStart above, since HTML5 drag-and-drop is unreliable on
+// iPad. A floating ghost follows the pointer while the real card stays put
+// (dimmed) until drop, when the nearest .matrix-dropzone under the pointer
+// decides the task's new matrixQuadrant.
+let matrixDragState = null;
+
+function matrixDragStart(e, id) {
+  e.preventDefault();
+  const card = document.querySelector(`.matrix-card[data-id="${id}"]`);
+  if (!card) return;
+  const rect = card.getBoundingClientRect();
+
+  const ghost = card.cloneNode(true);
+  ghost.classList.add('matrix-card-ghost');
+  ghost.style.width = rect.width + 'px';
+  ghost.style.left = rect.left + 'px';
+  ghost.style.top = rect.top + 'px';
+  document.body.appendChild(ghost);
+
+  matrixDragState = { id, offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top, ghost };
+  card.classList.add('dragging-source');
+
+  document.addEventListener('pointermove', matrixDragMove);
+  document.addEventListener('pointerup', matrixDragEnd);
+  document.addEventListener('pointercancel', matrixDragEnd);
+}
+
+function matrixDragMove(e) {
+  if (!matrixDragState) return;
+  const { ghost, offsetX, offsetY } = matrixDragState;
+  ghost.style.left = (e.clientX - offsetX) + 'px';
+  ghost.style.top = (e.clientY - offsetY) + 'px';
+
+  document.querySelectorAll('.matrix-dropzone.drop-hover').forEach(z => z.classList.remove('drop-hover'));
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const zone = under && under.closest('.matrix-dropzone');
+  if (zone) zone.classList.add('drop-hover');
+}
+
+function matrixDragEnd(e) {
+  if (!matrixDragState) return;
+  const { id, ghost } = matrixDragState;
+  document.removeEventListener('pointermove', matrixDragMove);
+  document.removeEventListener('pointerup', matrixDragEnd);
+  document.removeEventListener('pointercancel', matrixDragEnd);
+
+  ghost.remove();
+  document.querySelectorAll('.matrix-dropzone.drop-hover').forEach(z => z.classList.remove('drop-hover'));
+  const sourceCard = document.querySelector(`.matrix-card[data-id="${id}"]`);
+  if (sourceCard) sourceCard.classList.remove('dragging-source');
+
+  const under = document.elementFromPoint(e.clientX, e.clientY);
+  const zone = under && under.closest('.matrix-dropzone');
+  matrixDragState = null;
+  if (!zone) return;
+
+  const quadrant = zone.dataset.quadrant || '';
+  const it = items.find(i => i.id === id);
+  if (it && it.type !== 'meeting') {
+    it.matrixQuadrant = quadrant || null;
+    saveItems();
+    renderMatrixView();
+  }
 }
 
 function cyclePriority(id) {
